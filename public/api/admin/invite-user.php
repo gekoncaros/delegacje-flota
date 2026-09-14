@@ -17,7 +17,7 @@ $ttlHours = (int)($input['ttlHours'] ?? 48);
 
 try {
     $token = $invitations->create($email, $displayName, $roleCode, (int)$user['id'], $ttlHours);
-    $baseUrl = rtrim((string)(app_config()['url'] ?? getenv('APP_URL') ?: ''), '/');
+    $baseUrl = rtrim((string)($config['url'] ?? getenv('APP_URL') ?: ''), '/');
     if ($baseUrl === '') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
