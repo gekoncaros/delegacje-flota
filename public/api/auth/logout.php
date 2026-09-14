@@ -3,6 +3,9 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/_api.php';
 
 require_method('POST');
+current_api_user($auth);
+require_csrf();
+
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();
