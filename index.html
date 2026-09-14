@@ -1,84 +1,125 @@
 <!doctype html>
 <html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0b4f6c" />
-    <meta name="description" content="Delegacje i Flota — mobilny panel zgłoszeń oraz kosztów." />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="icons/app-icon.svg" />
-    <link rel="stylesheet" href="styles.css" />
-    <title>Delegacje i Flota</title>
-  </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="#dashboard" aria-label="Delegacje i Flota — strona główna">
-        <span class="brand-mark">DF</span><span>Delegacje <b>&amp;</b> Flota</span>
-      </a>
-      <button id="installButton" class="button ghost hidden">Zainstaluj aplikację</button>
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b4f6c" />
+  <meta name="description" content="Delegacje i Flota — mobilny panel delegacji, kosztów i pojazdów." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/app-icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Delegacje i Flota</title>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#dashboard"><span class="brand-mark">DF</span><span>Delegacje <b>&amp;</b> Flota</span></a>
+  <div class="top-actions"><button id="notificationsButton" class="icon-top" aria-label="Powiadomienia">🔔<span id="notificationBadge" class="badge hidden">0</span></button><button id="installButton" class="button ghost hidden">Zainstaluj</button></div>
+</header>
 
-    <main class="page" id="dashboard">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">PANEL PRACOWNIKA</p>
-          <h1>Wszystkie wyjazdy służbowe w jednym miejscu.</h1>
-          <p class="lead">Zgłaszaj delegacje, zapisuj przebieg i koszty auta — wygodnie również z telefonu.</p>
-        </div>
-        <button class="button primary" data-open-modal="tripModal">+ Nowa delegacja</button>
-      </section>
+<main class="page" id="dashboard">
+  <section class="hero">
+    <div><p class="eyebrow">PANEL PRACOWNIKA · DEMO PWA</p><h1>Delegacja od zgłoszenia do rozliczenia.</h1><p class="lead">Testuj na telefonie start i koniec wyjazdu, GPS, koszty, tankowania, flotę i zgłoszenia usterek.</p></div>
+    <button class="button primary" data-open-modal="tripModal">+ Nowa delegacja</button>
+  </section>
 
-      <section class="stats" aria-label="Podsumowanie">
-        <article><span>Delegacje w tym miesiącu</span><strong id="tripsCount">0</strong></article>
-        <article><span>Kilometry służbowe</span><strong id="distanceCount">0 km</strong></article>
-        <article><span>Wydatki do rozliczenia</span><strong id="expenseCount">0,00 zł</strong></article>
-      </section>
+  <section class="stats" aria-label="Podsumowanie">
+    <article><span>Delegacje</span><strong id="tripsCount">0</strong></article>
+    <article><span>Przejechane km</span><strong id="distanceCount">0 km</strong></article>
+    <article><span>Koszty</span><strong id="expenseCount">0,00 zł</strong></article>
+    <article><span>Otwarte usterki</span><strong id="incidentCount">0</strong></article>
+  </section>
 
-      <section class="grid">
-        <article class="card wide">
-          <div class="card-title"><div><p class="eyebrow">NAJBLIŻSZE</p><h2>Delegacje</h2></div><button class="text-button" data-open-modal="tripModal">Dodaj</button></div>
-          <div id="tripsList" class="empty-state">Nie masz jeszcze zgłoszonych delegacji.</div>
-        </article>
-        <article class="card">
-          <div class="card-title"><div><p class="eyebrow">SZYBKA AKCJA</p><h2>Stan licznika</h2></div></div>
-          <form id="mileageForm" class="stack">
-            <label>Aktualny przebieg<input id="mileage" type="number" min="0" placeholder="np. 42 150" required /></label>
-            <label>Pojazd<select id="vehicle"><option>Skoda Octavia — CCH 12345</option><option>Inny pojazd służbowy</option></select></label>
-            <button class="button primary" type="submit">Zapisz przebieg</button>
-          </form>
-        </article>
-        <article class="card wide">
-          <div class="card-title"><div><p class="eyebrow">KOSZTY</p><h2>Ostatnie wydatki</h2></div><button class="text-button" data-open-modal="expenseModal">Dodaj koszt</button></div>
-          <div id="expensesList" class="empty-state">Brak kosztów do rozliczenia.</div>
-        </article>
-      </section>
-    </main>
+  <section class="grid">
+    <article class="card wide">
+      <div class="card-title"><div><p class="eyebrow">DELEGACJE</p><h2>Moje wyjazdy</h2></div><button class="text-button" data-open-modal="tripModal">Dodaj</button></div>
+      <div id="tripsList" class="empty-state">Nie masz jeszcze delegacji.</div>
+    </article>
 
-    <nav class="bottom-nav" aria-label="Nawigacja mobilna">
-      <a class="active" href="#dashboard">⌂<span>Start</span></a>
-      <button data-open-modal="tripModal">✦<span>Delegacja</span></button>
-      <button data-open-modal="expenseModal">▣<span>Koszt</span></button>
-    </nav>
+    <article class="card">
+      <div class="card-title"><div><p class="eyebrow">FLOTA</p><h2>Pojazdy</h2></div><button class="text-button" data-open-modal="vehicleModal">Dodaj</button></div>
+      <div id="vehiclesList" class="items"></div>
+    </article>
 
-    <dialog id="tripModal"><form id="tripForm" method="dialog" class="modal-form">
-      <div class="modal-header"><div><p class="eyebrow">NOWE ZGŁOSZENIE</p><h2>Delegacja</h2></div><button class="icon-button" value="cancel" aria-label="Zamknij">×</button></div>
-      <label>Miejsce docelowe<input name="destination" required placeholder="np. Gliwice" /></label>
-      <div class="form-row"><label>Data od<input name="startDate" type="date" required /></label><label>Data do<input name="endDate" type="date" required /></label></div>
-      <label>Cel wyjazdu<textarea name="purpose" rows="3" required placeholder="Krótko opisz cel delegacji"></textarea></label>
-      <label>Środek transportu<select name="transport"><option>Samochód służbowy</option><option>Samochód prywatny</option><option>Pociąg</option><option>Inny</option></select></label>
-      <button class="button primary" value="default">Zapisz zgłoszenie</button>
-    </form></dialog>
+    <article class="card wide">
+      <div class="card-title"><div><p class="eyebrow">KOSZTY</p><h2>Wydatki i tankowania</h2></div><div><button class="text-button" data-open-modal="expenseModal">Koszt</button><button class="text-button" data-open-modal="fuelModal">Tankowanie</button></div></div>
+      <div id="expensesList" class="empty-state">Brak kosztów.</div>
+    </article>
 
-    <dialog id="expenseModal"><form id="expenseForm" method="dialog" class="modal-form">
-      <div class="modal-header"><div><p class="eyebrow">NOWY WPIS</p><h2>Koszt delegacji</h2></div><button class="icon-button" value="cancel" aria-label="Zamknij">×</button></div>
-      <label>Kategoria<select name="category"><option>Paliwo</option><option>Nocleg</option><option>Parking</option><option>Autostrada</option><option>Inny koszt</option></select></label>
-      <div class="form-row"><label>Kwota brutto<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0,00" /></label><label>Data<input name="date" type="date" required /></label></div>
-      <label>Opis / numer faktury<input name="note" placeholder="Opcjonalnie" /></label>
-      <button class="button primary" value="default">Dodaj koszt</button>
-    </form></dialog>
+    <article class="card">
+      <div class="card-title"><div><p class="eyebrow">SERWIS</p><h2>Usterki / szkody</h2></div><button class="text-button" data-open-modal="incidentModal">Zgłoś</button></div>
+      <div id="incidentsList" class="empty-state">Brak otwartych zgłoszeń.</div>
+    </article>
+  </section>
+</main>
 
-    <div id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
-  </body>
+<nav class="bottom-nav" aria-label="Nawigacja mobilna">
+  <a class="active" href="#dashboard">⌂<span>Start</span></a>
+  <button data-open-modal="tripModal">✦<span>Delegacja</span></button>
+  <button data-open-modal="expenseModal">▣<span>Koszt</span></button>
+  <button data-open-modal="incidentModal">⚠<span>Usterka</span></button>
+</nav>
+
+<dialog id="tripModal"><form id="tripForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">NOWE ZGŁOSZENIE</p><h2>Delegacja</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <label>Miejsce docelowe<input name="destination" required placeholder="np. Gliwice" /></label>
+  <div class="form-row"><label>Data od<input name="startDate" type="date" required /></label><label>Data do<input name="endDate" type="date" required /></label></div>
+  <label>Cel wyjazdu<textarea name="purpose" rows="3" required></textarea></label>
+  <label>Środek transportu<select name="transport"><option>Samochód służbowy</option><option>Samochód prywatny</option><option>Pociąg</option><option>Samolot</option><option>Inny</option></select></label>
+  <button class="button primary" type="submit">Zapisz delegację</button>
+</form></dialog>
+
+<dialog id="tripActionModal"><form id="tripActionForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">PRZEBIEG DELEGACJI</p><h2 id="tripActionTitle">Delegacja</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <input type="hidden" name="tripId" />
+  <input type="hidden" name="action" />
+  <label>Stan licznika<input name="odometer" type="number" min="0" inputmode="numeric" required /></label>
+  <label class="check"><input name="useGps" type="checkbox" checked /> <span>Zapisz moją aktualną lokalizację GPS</span></label>
+  <p class="hint">GPS jest pobierany tylko po naciśnięciu przycisku i zgodzie telefonu.</p>
+  <button class="button primary" type="submit" id="tripActionSubmit">Zapisz</button>
+</form></dialog>
+
+<dialog id="expenseModal"><form id="expenseForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">NOWY WPIS</p><h2>Koszt delegacji</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <label>Delegacja<select name="tripId" id="expenseTrip"></select></label>
+  <label>Kategoria<select name="category"><option>Nocleg</option><option>Parking</option><option>Autostrada</option><option>Posiłek</option><option>Inny koszt</option></select></label>
+  <div class="form-row"><label>Kwota brutto<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Data<input name="date" type="date" required /></label></div>
+  <label>Opis / numer dokumentu<input name="note" /></label>
+  <label>Zdjęcie paragonu / faktury<input name="document" type="file" accept="image/*,application/pdf" capture="environment" /></label>
+  <p id="documentInfo" class="hint"></p>
+  <button class="button primary" type="submit">Dodaj koszt</button>
+</form></dialog>
+
+<dialog id="fuelModal"><form id="fuelForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">FLOTA</p><h2>Tankowanie</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <label>Pojazd<select name="vehicleId" id="fuelVehicle"></select></label>
+  <div class="form-row"><label>Litry<input name="liters" type="number" min="0.01" step="0.01" required /></label><label>Kwota<input name="amount" type="number" min="0.01" step="0.01" required /></label></div>
+  <label>Stan licznika<input name="odometer" type="number" min="0" required /></label>
+  <label>Stacja<input name="station" placeholder="np. Orlen" /></label>
+  <label>Zdjęcie dokumentu<input name="document" type="file" accept="image/*,application/pdf" capture="environment" /></label>
+  <button class="button primary" type="submit">Zapisz tankowanie</button>
+</form></dialog>
+
+<dialog id="vehicleModal"><form id="vehicleForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">FLOTA</p><h2>Dodaj pojazd</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <div class="form-row"><label>Marka<input name="make" required /></label><label>Model<input name="model" required /></label></div>
+  <label>Nr rejestracyjny<input name="registration" required /></label>
+  <label>Stan licznika<input name="mileage" type="number" min="0" required /></label>
+  <button class="button primary" type="submit">Dodaj pojazd</button>
+</form></dialog>
+
+<dialog id="incidentModal"><form id="incidentForm" class="modal-form">
+  <div class="modal-header"><div><p class="eyebrow">SERWIS</p><h2>Zgłoś problem</h2></div><button type="button" class="icon-button" data-close>×</button></div>
+  <label>Pojazd<select name="vehicleId" id="incidentVehicle"></select></label>
+  <label>Rodzaj<select name="category"><option>Awaria</option><option>Szkoda</option><option>Opony</option><option>Kontrolka</option><option>Serwis</option><option>Dokumenty</option><option>Inne</option></select></label>
+  <label>Opis<textarea name="description" rows="4" required></textarea></label>
+  <label class="check"><input name="unsafe" type="checkbox" /> <span>Pojazd nie powinien dalej jechać</span></label>
+  <button class="button primary" type="submit">Zapisz zgłoszenie</button>
+</form></dialog>
+
+<dialog id="notificationsModal"><div class="modal-form"><div class="modal-header"><div><p class="eyebrow">CENTRUM</p><h2>Powiadomienia</h2></div><button type="button" class="icon-button" data-close>×</button></div><div id="notificationsList" class="empty-state">Brak powiadomień.</div><button id="clearNotifications" class="button ghost">Wyczyść</button></div></dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
 </html>
