@@ -10,22 +10,27 @@ require_once dirname(__DIR__) . '/src/Infrastructure/PdoDelegationRepository.php
 require_once dirname(__DIR__) . '/src/Infrastructure/PdoVehicleRepository.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/PdoDelegationEventRepository.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/ActivityLogger.php';
+require_once dirname(__DIR__) . '/src/Security/AuthService.php';
+require_once dirname(__DIR__) . '/src/Security/Authorization.php';
 
 use Delegacje\Infrastructure\ActivityLogger;
 use Delegacje\Infrastructure\Database;
 use Delegacje\Infrastructure\PdoDelegationEventRepository;
 use Delegacje\Infrastructure\PdoDelegationRepository;
 use Delegacje\Infrastructure\PdoVehicleRepository;
+use Delegacje\Security\AuthService;
 use Delegacje\Support\Env;
 
 Env::load(dirname(__DIR__) . '/.env');
 $appConfig = require dirname(__DIR__) . '/config/app.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_name('delegacje_session');
     session_set_cookie_params([
         'httponly' => true,
         'secure' => filter_var(getenv('SESSION_SECURE') ?: 'true', FILTER_VALIDATE_BOOLEAN),
         'samesite' => 'Lax',
+        'path' => '/',
     ]);
     session_start();
 }
@@ -75,6 +80,7 @@ function production_services(): array
 
     $services = [
         'pdo' => $pdo,
+        'auth' => new AuthService($pdo),
         'delegations' => new PdoDelegationRepository($pdo, $config['mapping']),
         'vehicles' => new PdoVehicleRepository($pdo, $config['mapping']),
         'events' => new PdoDelegationEventRepository($pdo),
@@ -89,16 +95,41 @@ function current_user_id(): int
     return (int)($_SESSION['user_id'] ?? 0);
 }
 
-function require_production_user(): int
+function current_user(): ?array
 {
-    $userId = current_user_id();
-
-    if (app_mode() === 'production' && $userId < 1) {
-        http_response_code(401);
-        exit('Brak aktywnej sesji użytkownika.');
+    if (app_mode() !== 'production') {
+        return [
+            'id' => 0,
+            'email' => 'demo@example.local',
+            'display_name' => 'Użytkownik demo',
+            'roles' => ['employee'],
+        ];
     }
 
-    return $userId;
+    $userId = current_user_id();
+    if ($userId < 1) {
+        return null;
+    }
+
+    return production_services()['auth']->userById($userId);
+}
+
+function require_production_user(): int
+{
+    if (app_mode() !== 'production') {
+        return 0;
+    }
+
+    $user = current_user();
+    if (!$user) {
+        $_SESSION = [];
+        header('Location: ./login.php');
+        exit;
+    }
+
+    $_SESSION['roles'] = $user['roles'];
+    $_SESSION['display_name'] = $user['display_name'];
+    return (int)$user['id'];
 }
 
 function h(string $value): string
