@@ -5,9 +5,11 @@ require_once dirname(__DIR__, 2) . '/src/Support/Env.php';
 require_once dirname(__DIR__, 2) . '/src/Infrastructure/Database.php';
 require_once dirname(__DIR__, 2) . '/src/Security/AuthService.php';
 require_once dirname(__DIR__, 2) . '/src/Security/Authorization.php';
+require_once dirname(__DIR__, 2) . '/src/Security/UserInvitationService.php';
 
 use Delegacje\Infrastructure\Database;
 use Delegacje\Security\AuthService;
+use Delegacje\Security\UserInvitationService;
 use Delegacje\Support\Env;
 
 Env::load(dirname(__DIR__, 2) . '/.env');
@@ -32,6 +34,7 @@ header('X-Frame-Options: DENY');
 
 $pdo = (new Database($config['db']))->connection();
 $auth = new AuthService($pdo);
+$invitations = new UserInvitationService($pdo);
 
 function json_input(): array
 {
