@@ -1,7 +1,28 @@
 <?php
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/src/Support/Env.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/Database.php';
+require_once dirname(__DIR__) . '/src/Contracts/DelegationRepository.php';
+require_once dirname(__DIR__) . '/src/Contracts/VehicleRepository.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/PdoDelegationRepository.php';
+require_once dirname(__DIR__) . '/src/Infrastructure/PdoVehicleRepository.php';
+
+use Delegacje\Infrastructure\Database;
+use Delegacje\Infrastructure\PdoDelegationRepository;
+use Delegacje\Infrastructure\PdoVehicleRepository;
+use Delegacje\Support\Env;
+
+Env::load(dirname(__DIR__) . '/.env');
+
+$appConfig = require dirname(__DIR__) . '/config/app.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_set_cookie_params([
+        'httponly' => true,
+        'secure' => filter_var(getenv('SESSION_SECURE') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -38,6 +59,46 @@ if (!isset($_SESSION['demo_vehicles'])) {
     ];
 }
 
+function app_config(): array
+{
+    global $appConfig;
+    return $appConfig;
+}
+
+function app_mode(): string
+{
+    return (string)(app_config()['mode'] ?? 'demo');
+}
+
+function production_repositories(): array
+{
+    static $repositories = null;
+
+    if (is_array($repositories)) {
+        return $repositories;
+    }
+
+    $config = app_config();
+
+    if (($config['mode'] ?? 'demo') !== 'production') {
+        throw new RuntimeException('Repozytoria produkcyjne są dostępne tylko w APP_MODE=production.');
+    }
+
+    $pdo = (new Database($config['db']))->connection();
+
+    $repositories = [
+        'delegations' => new PdoDelegationRepository($pdo, $config['mapping']),
+        'vehicles' => new PdoVehicleRepository($pdo, $config['mapping']),
+    ];
+
+    return $repositories;
+}
+
+function current_user_id(): int
+{
+    return (int)($_SESSION['user_id'] ?? 0);
+}
+
 function h(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -51,6 +112,7 @@ function csrf_field(): string
 function verify_csrf(): void
 {
     $token = $_POST['csrf_token'] ?? '';
+
     if (!is_string($token) || !hash_equals($_SESSION['csrf_token'], $token)) {
         http_response_code(419);
         exit('Sesja formularza wygasła. Wróć do aplikacji i spróbuj ponownie.');
@@ -70,6 +132,7 @@ function demo_delegation_by_id(int $id): ?array
             return $delegation;
         }
     }
+
     return null;
 }
 
@@ -90,5 +153,6 @@ function current_demo_delegation(): ?array
             return $delegation;
         }
     }
+
     return null;
 }
