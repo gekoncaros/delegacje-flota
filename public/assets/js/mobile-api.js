@@ -1,5 +1,5 @@
 (() => {
-  const boot = window.DELEGACJE_BOOT || {csrf:'',roles:[]};
+  const boot = window.DELEGACJE_BOOT || {csrf:'',roles:[],userId:0};
   const list = document.getElementById('delegationsList');
   const detail = document.getElementById('detail');
   const viewList = document.getElementById('viewList');
@@ -35,7 +35,7 @@
 
   function renderRows(mode='all') {
     let rows = items;
-    if (mode==='approvals') rows = items.filter(x=>x.status==='pending');
+    if (mode==='approvals') rows = items.filter(x=>x.status==='pending' && (Number(x.manager_id)===Number(boot.userId) || roles.has('super_admin')));
     if (mode==='accounting') rows = items.filter(x=>x.status==='finished' || x.accounting_status!=='not_ready');
     list.innerHTML = rows.length ? rows.map(x=>`<article class="card list-card mobile-card" data-id="${x.id}"><div><strong>${esc(x.destination)}</strong><p>${esc(x.number)} · ${esc(x.employee_name||'')} · ${esc(x.date_from)} → ${esc(x.date_to)}</p></div><span class="status-pill">${esc(statusLabel(x.status))}</span></article>`).join('') : '<article class="card empty-card"><div><strong>Brak pozycji</strong><p>Nie ma delegacji w tym widoku.</p></div></article>';
     list.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openDetail(Number(el.dataset.id))));
@@ -56,8 +56,9 @@
     const x=items.find(i=>Number(i.id)===Number(id)); if(!x)return;
     show('none'); detail.classList.remove('hidden');
     let actions='';
-    const isOwner=true; // visibility is already enforced server-side; server rechecks every transition.
-    if (x.status==='pending' && (roles.has('manager')||roles.has('super_admin'))) actions += actionButton('✓ Zatwierdź','approve')+actionButton('✕ Odrzuć','reject','danger');
+    const isOwner = Number(x.user_id) === Number(boot.userId);
+    const isAssignedManager = Number(x.manager_id) === Number(boot.userId);
+    if (x.status==='pending' && ((roles.has('manager') && isAssignedManager)||roles.has('super_admin'))) actions += actionButton('✓ Zatwierdź','approve')+actionButton('✕ Odrzuć','reject','danger');
     if (x.status==='approved' && isOwner) actions += actionButton('▶ Rozpocznij','start');
     if (x.status==='started' && isOwner) actions += actionButton('■ Zakończ','finish');
     if (x.status==='finished' && (roles.has('accounting')||roles.has('super_admin'))) actions += actionButton('Zaksięguj','accounting_book')+actionButton('Oznacz wypłatę','accounting_pay');
