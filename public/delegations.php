@@ -2,7 +2,12 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
-$delegations = array_reverse($_SESSION['demo_delegations']);
+if (app_mode() === 'production') {
+    $userId = require_production_user();
+    $delegations = production_services()['delegations']->recentForUser($userId, 50);
+} else {
+    $delegations = array_reverse($_SESSION['demo_delegations']);
+}
 ?>
 <!doctype html>
 <html lang="pl">
@@ -32,10 +37,13 @@ $delegations = array_reverse($_SESSION['demo_delegations']);
         <?php foreach ($delegations as $delegation): ?>
           <a class="card list-card" href="./delegation.php?id=<?= (int)$delegation['id'] ?>">
             <div>
-              <strong><?= h($delegation['destination']) ?></strong>
-              <p><?= h($delegation['number']) ?> · <?= h($delegation['date_from']) ?> → <?= h($delegation['date_to']) ?></p>
+              <strong><?= h((string)$delegation['destination']) ?></strong>
+              <p>
+                <?= h((string)($delegation['number'] ?? ('#' . $delegation['id']))) ?>
+                · <?= h((string)$delegation['date_from']) ?> → <?= h((string)$delegation['date_to']) ?>
+              </p>
             </div>
-            <span class="status-pill"><?= h($delegation['trip_status']) ?></span>
+            <span class="status-pill"><?= h((string)($delegation['trip_status'] ?? $delegation['status'] ?? 'draft')) ?></span>
           </a>
         <?php endforeach; ?>
       </div>
