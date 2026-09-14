@@ -38,20 +38,23 @@ final class UserInvitationService
             throw new \RuntimeException('Użytkownik z tym adresem e-mail już istnieje.');
         }
 
+        $ttlHours = max(1, min(168, $ttlHours));
+        $expiresAt = (new \DateTimeImmutable('now'))->modify('+' . $ttlHours . ' hours')->format('Y-m-d H:i:s');
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO auth_invitations (email, display_name, role_code, token_hash, created_by, expires_at)
-             VALUES (:email, :display_name, :role_code, :token_hash, :created_by, DATE_ADD(NOW(), INTERVAL :ttl HOUR))'
+             VALUES (:email, :display_name, :role_code, :token_hash, :created_by, :expires_at)'
         );
-        $stmt->bindValue(':email', $email);
-        $stmt->bindValue(':display_name', $displayName);
-        $stmt->bindValue(':role_code', $roleCode);
-        $stmt->bindValue(':token_hash', $tokenHash);
-        $stmt->bindValue(':created_by', $createdBy, PDO::PARAM_INT);
-        $stmt->bindValue(':ttl', max(1, min(168, $ttlHours)), PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([
+            'email' => $email,
+            'display_name' => $displayName,
+            'role_code' => $roleCode,
+            'token_hash' => $tokenHash,
+            'created_by' => $createdBy,
+            'expires_at' => $expiresAt,
+        ]);
 
         return $rawToken;
     }
