@@ -2,7 +2,12 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
-$vehicles = $_SESSION['demo_vehicles'];
+if (app_mode() === 'production') {
+    $userId = require_production_user();
+    $vehicles = production_services()['vehicles']->allVisibleForUser($userId);
+} else {
+    $vehicles = $_SESSION['demo_vehicles'];
+}
 ?>
 <!doctype html>
 <html lang="pl">
@@ -26,9 +31,9 @@ $vehicles = $_SESSION['demo_vehicles'];
         <article class="card vehicle-card">
           <div class="vehicle-icon">🚗</div>
           <div class="vehicle-main">
-            <strong><?= h($vehicle['make'] . ' ' . $vehicle['model']) ?></strong>
-            <p><?= h($vehicle['registration_number']) ?> · <?= number_format((int)$vehicle['mileage_km'], 0, ',', ' ') ?> km</p>
-            <span class="status-pill"><?= h($vehicle['status']) ?></span>
+            <strong><?= h((string)$vehicle['make'] . ' ' . (string)$vehicle['model']) ?></strong>
+            <p><?= h((string)$vehicle['registration_number']) ?> · <?= number_format((int)($vehicle['mileage_km'] ?? 0), 0, ',', ' ') ?> km</p>
+            <span class="status-pill"><?= h((string)$vehicle['status']) ?></span>
           </div>
           <div class="vehicle-actions">
             <a href="./expense.php">⛽ Tankowanie</a>
