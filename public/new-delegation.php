@@ -13,20 +13,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateTo = (string)($_POST['date_to'] ?? '');
     $transport = (string)($_POST['transport'] ?? 'company_car');
 
-    if ($destination === '') {
-        $errors[] = 'Podaj miejsce docelowe.';
-    }
-    if ($purpose === '') {
-        $errors[] = 'Podaj cel delegacji.';
-    }
-    if ($dateFrom === '' || $dateTo === '') {
-        $errors[] = 'Podaj datę rozpoczęcia i zakończenia.';
-    }
+    if ($destination === '') $errors[] = 'Podaj miejsce docelowe.';
+    if ($purpose === '') $errors[] = 'Podaj cel delegacji.';
+    if ($dateFrom === '' || $dateTo === '') $errors[] = 'Podaj datę rozpoczęcia i zakończenia.';
     if ($dateFrom !== '' && $dateTo !== '' && $dateTo < $dateFrom) {
         $errors[] = 'Data zakończenia nie może być wcześniejsza niż rozpoczęcia.';
     }
 
     if (!$errors) {
+        if (app_mode() === 'production') {
+            $userId = require_production_user();
+            $services = production_services();
+
+            $newId = $services['delegations']->createForUser($userId, [
+                'destination' => $destination,
+                'purpose' => $purpose,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'status' => 'draft',
+            ]);
+
+            $services['activity']->log($userId, 'delegation.create', 'delegation', $newId, [
+                'transport' => $transport,
+            ]);
+
+            redirect('./delegation.php?id=' . $newId);
+        }
+
         $nextId = count($_SESSION['demo_delegations']) + 1;
         $_SESSION['demo_delegations'][] = [
             'id' => $nextId,
@@ -68,9 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <main class="content">
     <?php if ($errors): ?>
-      <div class="alert error">
-        <?php foreach ($errors as $error): ?><div><?= h($error) ?></div><?php endforeach; ?>
-      </div>
+      <div class="alert error"><?php foreach ($errors as $error): ?><div><?= h($error) ?></div><?php endforeach; ?></div>
     <?php endif; ?>
 
     <form class="form-card" method="post">
@@ -103,7 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </select>
       </label>
 
-      <p class="hint">Tryb demonstracyjny: nowy wniosek jest automatycznie oznaczany jako zaakceptowany, aby można było przetestować start i zakończenie wyjazdu.</p>
+      <?php if (app_mode() === 'demo'): ?>
+        <p class="hint">Tryb demonstracyjny: wniosek jest automatycznie oznaczany jako gotowy do testów.</p>
+      <?php endif; ?>
 
       <button class="primary-btn dark-btn full" type="submit">Utwórz delegację</button>
     </form>
