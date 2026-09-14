@@ -2,9 +2,25 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
-$userName = $_SESSION['user_name'] ?? 'Użytkownik';
-$currentTrip = current_demo_delegation();
-$recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0, 3);
+if (app_mode() === 'production') {
+    $userId = require_production_user();
+    $user = current_user();
+    $userName = (string)($user['display_name'] ?? 'Użytkownik');
+    $recentDelegations = production_services()['delegations']->recentForUser($userId, 20);
+    $currentTrip = null;
+    foreach ($recentDelegations as $delegation) {
+        $status = (string)($delegation['trip_status'] ?? $delegation['status'] ?? '');
+        if ($status === 'started') {
+            $currentTrip = $delegation;
+            break;
+        }
+    }
+    $recentDelegations = array_slice($recentDelegations, 0, 3);
+} else {
+    $userName = $_SESSION['user_name'] ?? 'Użytkownik demo';
+    $currentTrip = current_demo_delegation();
+    $recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0, 3);
+}
 ?>
 <!doctype html>
 <html lang="pl">
@@ -26,7 +42,12 @@ $recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0
         <p class="eyebrow">Delegacje + Flota</p>
         <h1>Dzień dobry, <?= h((string)$userName) ?></h1>
       </div>
-      <button class="icon-btn" type="button" aria-label="Powiadomienia">🔔</button>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn" type="button" aria-label="Powiadomienia">🔔</button>
+        <?php if (app_mode() === 'production'): ?>
+          <button class="icon-btn" id="logoutButton" type="button" aria-label="Wyloguj">↪</button>
+        <?php endif; ?>
+      </div>
     </header>
 
     <main class="content">
@@ -45,8 +66,8 @@ $recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0
           <a class="card active-trip" href="./delegation.php?id=<?= (int)$currentTrip['id'] ?>">
             <div>
               <span class="status-pill">w trasie</span>
-              <h3><?= h($currentTrip['destination']) ?></h3>
-              <p><?= h($currentTrip['number']) ?> · start <?= h((string)$currentTrip['started_at']) ?></p>
+              <h3><?= h((string)$currentTrip['destination']) ?></h3>
+              <p><?= h((string)($currentTrip['number'] ?? ('#' . $currentTrip['id']))) ?></p>
             </div>
             <span class="chevron">›</span>
           </a>
@@ -79,14 +100,14 @@ $recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0
         <?php if (!$recentDelegations): ?>
           <article class="card empty-card">
             <span class="empty-icon">📋</span>
-            <div><strong>Brak danych do wyświetlenia</strong><p>Utwórz pierwszą delegację w trybie testowym.</p></div>
+            <div><strong>Brak danych do wyświetlenia</strong><p>Utwórz pierwszą delegację.</p></div>
           </article>
         <?php else: ?>
           <div class="stack">
             <?php foreach ($recentDelegations as $delegation): ?>
               <a class="card list-card" href="./delegation.php?id=<?= (int)$delegation['id'] ?>">
-                <div><strong><?= h($delegation['destination']) ?></strong><p><?= h($delegation['number']) ?></p></div>
-                <span class="status-pill"><?= h($delegation['trip_status']) ?></span>
+                <div><strong><?= h((string)$delegation['destination']) ?></strong><p><?= h((string)($delegation['number'] ?? ('#' . $delegation['id']))) ?></p></div>
+                <span class="status-pill"><?= h((string)($delegation['trip_status'] ?? $delegation['status'] ?? '')) ?></span>
               </a>
             <?php endforeach; ?>
           </div>
@@ -106,11 +127,21 @@ $recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0
   <script>
     const installButton = document.getElementById('installPwaButton');
     window.addEventListener('pwa-install-available', () => {
-      installButton.hidden = false;
+      if (installButton) installButton.hidden = false;
     });
     installButton?.addEventListener('click', async () => {
       await window.installDelegacjePwa();
       installButton.hidden = true;
+    });
+
+    document.getElementById('logoutButton')?.addEventListener('click', async () => {
+      const me = await fetch('./api/auth/me.php', {credentials:'same-origin'}).then(r => r.json()).catch(() => ({}));
+      await fetch('./api/auth/logout.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: me.csrfToken ? {'X-CSRF-Token': me.csrfToken} : {}
+      });
+      location.replace('./login.php');
     });
   </script>
 </body>
