@@ -28,6 +28,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
+header('X-Frame-Options: DENY');
 
 $pdo = (new Database($config['db']))->connection();
 $auth = new AuthService($pdo);
@@ -62,6 +63,15 @@ function require_method(string $method): void
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== $method) {
         header('Allow: ' . $method);
         api_error('Niedozwolona metoda.', 405);
+    }
+}
+
+function require_csrf(): void
+{
+    $expected = (string)($_SESSION['csrf_token'] ?? '');
+    $provided = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
+        api_error('Nieprawidłowy token CSRF.', 419);
     }
 }
 
