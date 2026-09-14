@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
-
-session_start();
+require __DIR__ . '/_bootstrap.php';
 
 $userName = $_SESSION['user_name'] ?? 'Użytkownik';
-$currentTrip = null;
+$currentTrip = current_demo_delegation();
+$recentDelegations = array_slice(array_reverse($_SESSION['demo_delegations']), 0, 3);
 ?>
 <!doctype html>
 <html lang="pl">
@@ -24,7 +24,7 @@ $currentTrip = null;
     <header class="topbar">
       <div>
         <p class="eyebrow">Delegacje + Flota</p>
-        <h1>Dzień dobry, <?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8') ?></h1>
+        <h1>Dzień dobry, <?= h((string)$userName) ?></h1>
       </div>
       <button class="icon-btn" type="button" aria-label="Powiadomienia">🔔</button>
     </header>
@@ -34,41 +34,38 @@ $currentTrip = null;
         <div>
           <p class="eyebrow light">Szybki start</p>
           <h2>Nowa delegacja</h2>
-          <p>Utwórz wniosek i wyślij go do akceptacji bezpośrednio z telefonu.</p>
+          <p>Utwórz wniosek i przejdź cały mobilny proces od startu do rozliczenia.</p>
         </div>
-        <a class="primary-btn light-btn" href="#new-delegation">+ Nowa delegacja</a>
+        <a class="primary-btn light-btn" href="./new-delegation.php">+ Nowa delegacja</a>
       </section>
 
       <section>
-        <div class="section-heading">
-          <h2>Aktualna delegacja</h2>
-        </div>
-
+        <div class="section-heading"><h2>Aktualna delegacja</h2></div>
         <?php if ($currentTrip): ?>
-          <article class="card">
-            <strong><?= htmlspecialchars($currentTrip['route'], ENT_QUOTES, 'UTF-8') ?></strong>
-          </article>
+          <a class="card active-trip" href="./delegation.php?id=<?= (int)$currentTrip['id'] ?>">
+            <div>
+              <span class="status-pill">w trasie</span>
+              <h3><?= h($currentTrip['destination']) ?></h3>
+              <p><?= h($currentTrip['number']) ?> · start <?= h((string)$currentTrip['started_at']) ?></p>
+            </div>
+            <span class="chevron">›</span>
+          </a>
         <?php else: ?>
           <article class="card empty-card">
             <span class="empty-icon">🧳</span>
-            <div>
-              <strong>Brak aktywnej delegacji</strong>
-              <p>Po zaakceptowaniu wyjazdu pojawi się tutaj możliwość rozpoczęcia podróży.</p>
-            </div>
+            <div><strong>Brak aktywnej delegacji</strong><p>Rozpoczęty wyjazd pojawi się tutaj automatycznie.</p></div>
           </article>
         <?php endif; ?>
       </section>
 
       <section>
-        <div class="section-heading">
-          <h2>Szybkie akcje</h2>
-        </div>
+        <div class="section-heading"><h2>Szybkie akcje</h2></div>
         <div class="quick-grid">
-          <button class="action-card" type="button"><span>📷</span><strong>Paragon</strong><small>Zrób zdjęcie</small></button>
-          <button class="action-card" type="button"><span>⛽</span><strong>Tankowanie</strong><small>Dodaj koszt</small></button>
-          <button class="action-card" type="button"><span>🧾</span><strong>Wydatek</strong><small>Dodaj dokument</small></button>
-          <button class="action-card" type="button"><span>🚗</span><strong>Pojazd</strong><small>Moja flota</small></button>
-          <button class="action-card" type="button"><span>⚠️</span><strong>Problem</strong><small>Zgłoś usterkę</small></button>
+          <a class="action-card" href="./expense.php"><span>📷</span><strong>Paragon</strong><small>Zrób zdjęcie</small></a>
+          <a class="action-card" href="./expense.php"><span>⛽</span><strong>Tankowanie</strong><small>Dodaj koszt</small></a>
+          <a class="action-card" href="./expense.php"><span>🧾</span><strong>Wydatek</strong><small>Dodaj dokument</small></a>
+          <a class="action-card" href="./vehicles.php"><span>🚗</span><strong>Pojazd</strong><small>Moja flota</small></a>
+          <a class="action-card" href="./vehicles.php"><span>⚠️</span><strong>Problem</strong><small>Zgłoś usterkę</small></a>
           <button class="action-card install-card" id="installPwaButton" type="button" hidden><span>📲</span><strong>Zainstaluj</strong><small>Dodaj aplikację</small></button>
         </div>
       </section>
@@ -76,22 +73,31 @@ $currentTrip = null;
       <section>
         <div class="section-heading">
           <h2>Ostatnie delegacje</h2>
-          <a href="#delegations">Pokaż wszystkie</a>
+          <a href="./delegations.php">Pokaż wszystkie</a>
         </div>
-        <article class="card empty-card">
-          <span class="empty-icon">📋</span>
-          <div>
-            <strong>Brak danych do wyświetlenia</strong>
-            <p>Historia delegacji pojawi się po integracji z istniejącą bazą systemu.</p>
+
+        <?php if (!$recentDelegations): ?>
+          <article class="card empty-card">
+            <span class="empty-icon">📋</span>
+            <div><strong>Brak danych do wyświetlenia</strong><p>Utwórz pierwszą delegację w trybie testowym.</p></div>
+          </article>
+        <?php else: ?>
+          <div class="stack">
+            <?php foreach ($recentDelegations as $delegation): ?>
+              <a class="card list-card" href="./delegation.php?id=<?= (int)$delegation['id'] ?>">
+                <div><strong><?= h($delegation['destination']) ?></strong><p><?= h($delegation['number']) ?></p></div>
+                <span class="status-pill"><?= h($delegation['trip_status']) ?></span>
+              </a>
+            <?php endforeach; ?>
           </div>
-        </article>
+        <?php endif; ?>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Nawigacja główna">
       <a class="active" href="./"><span>⌂</span><small>Start</small></a>
-      <a href="#delegations"><span>🧳</span><small>Delegacje</small></a>
-      <a href="#fleet"><span>🚗</span><small>Flota</small></a>
+      <a href="./delegations.php"><span>🧳</span><small>Delegacje</small></a>
+      <a href="./vehicles.php"><span>🚗</span><small>Flota</small></a>
       <a href="#profile"><span>👤</span><small>Profil</small></a>
     </nav>
   </div>
