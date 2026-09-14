@@ -16,12 +16,17 @@ Env::load(dirname(__DIR__) . '/.env');
 $config = require dirname(__DIR__) . '/config/app.php';
 $pdo = (new Database($config['db']))->connection();
 
-$email = mb_strtolower(trim((string)($argv[1] ?? '')));
+$email = strtolower(trim((string)($argv[1] ?? '')));
 $name = trim((string)($argv[2] ?? ''));
-$password = (string)($argv[3] ?? '');
+$password = (string)(getenv('INITIAL_ADMIN_PASSWORD') ?: '');
 
-if ($email === '' || $name === '' || $password === '') {
-    fwrite(STDERR, "Użycie: php scripts/create-super-admin.php admin@firma.pl \"Imię Nazwisko\" \"SilneHasło\"\n");
+if ($email === '' || $name === '') {
+    fwrite(STDERR, "Użycie: INITIAL_ADMIN_PASSWORD='...' php scripts/create-super-admin.php admin@firma.pl \"Imię Nazwisko\"\n");
+    exit(1);
+}
+
+if ($password === '') {
+    fwrite(STDERR, "Ustaw zmienną środowiskową INITIAL_ADMIN_PASSWORD. Hasło nie jest przyjmowane jako argument CLI.\n");
     exit(1);
 }
 
