@@ -1,0 +1,11 @@
+{
+  "name": "Delegacje + Flota",
+  "short_name": "Delegacje",
+  "description": "Delegacje i flota w kieszeni pracownika",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": []
+}
