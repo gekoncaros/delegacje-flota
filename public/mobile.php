@@ -24,7 +24,7 @@ $csrf = (string)($_SESSION['csrf_token'] ?? '');
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./assets/css/app.css">
   <style>
-    .mobile-tabs{display:flex;gap:8px;overflow:auto;margin-bottom:14px}.mobile-tabs button{white-space:nowrap;border:0;border-radius:999px;padding:10px 14px;background:#eef2f7}.mobile-tabs button.active{background:#111827;color:#fff}.mobile-form{display:grid;gap:12px}.mobile-form input,.mobile-form textarea,.mobile-form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d1d5db;border-radius:12px}.mobile-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.mobile-actions button{border:0;border-radius:10px;padding:10px 12px}.mobile-actions .primary{background:#111827;color:#fff}.mobile-actions .danger{background:#fee2e2;color:#991b1b}.mobile-status{font-size:12px;font-weight:700;text-transform:uppercase}.mobile-card{cursor:pointer}.muted{color:#6b7280}.hidden{display:none!important}
+    .mobile-tabs{display:flex;gap:8px;overflow:auto;margin-bottom:14px}.mobile-tabs button{white-space:nowrap;border:0;border-radius:999px;padding:10px 14px;background:#eef2f7}.mobile-tabs button.active{background:#111827;color:#fff}.mobile-form{display:grid;gap:12px}.mobile-form input,.mobile-form textarea,.mobile-form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d1d5db;border-radius:12px}.mobile-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.mobile-actions button{border:0;border-radius:10px;padding:10px 12px}.mobile-actions .primary{background:#111827;color:#fff}.mobile-actions .danger{background:#fee2e2;color:#991b1b}.mobile-card{cursor:pointer}.muted{color:#6b7280}.hidden{display:none!important}
   </style>
 </head>
 <body>
@@ -37,7 +37,7 @@ $csrf = (string)($_SESSION['csrf_token'] ?? '');
     <section id="detail" class="hidden"></section>
   </main>
 </div>
-<script>window.DELEGACJE_BOOT={csrf:<?= json_encode($csrf) ?>,roles:<?= json_encode(array_values($roles)) ?>};</script>
+<script>window.DELEGACJE_BOOT={csrf:<?= json_encode($csrf) ?>,roles:<?= json_encode(array_values($roles)) ?>,userId:<?= (int)$userId ?>};</script>
 <script src="./assets/js/mobile-api.js"></script>
 <script src="./assets/js/pwa.js"></script>
 </body>
