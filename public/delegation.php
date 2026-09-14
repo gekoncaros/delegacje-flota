@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php else: ?>
       <section class="card">
         <strong>Delegacja zakończona</strong>
-        <p>Przebieg: <?= max(0, (int)$delegation['odometer_end'] - (int)$delegation['odometer_start'] ?> km</p>
+        <p>Przebieg: <?= max(0, (int)$delegation['odometer_end'] - (int)$delegation['odometer_start']) ?> km</p>
         <a class="primary-btn dark-btn full" href="./expense.php?delegation_id=<?= (int)$id ?>">Dodaj koszt / paragon</a>
       </section>
     <?php endif; ?>
