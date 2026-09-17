@@ -33,3 +33,16 @@ Przed merge należy sprawdzić co najmniej:
 
 ### Audyt 2026-09-18
 Rozpoczęto systematyczny hardening aplikacji: service worker, PWA manifest, QR quick-start, walidacja wejścia oraz eliminacja zależności runtime od zewnętrznego CDN.
+
+## Fundament produkcyjny
+
+Katalog `server/` zawiera przygotowany backend PHP 8 + MySQL/MariaDB:
+- sesje HttpOnly/Secure/SameSite,
+- logowanie z `password_hash/password_verify`,
+- RBAC dla pracownika, przełożonego, księgowości, floty i Super Admina,
+- API delegacji i decyzji przełożonego,
+- serwerowy audit log,
+- przygotowany schemat bazy,
+- konfigurację poza repozytorium.
+
+Instalacja: skopiuj `server/config.example.php` do `server/config.php`, uzupełnij dane bazy, zaimportuj `server/schema.sql` i skieruj HTTPS na aplikację. Plik `server/config.php` nie może być commitowany.
