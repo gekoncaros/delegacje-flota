@@ -1,0 +1,20 @@
+name: Quality
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON
+        run: python -m json.tool docs/manifest.webmanifest >/dev/null
+      - name: PHP syntax
+        run: find server -name '*.php' ! -name 'config.php' -print0 | xargs -0 -n1 php -l
+      - name: No committed secrets
+        run: |
+          test ! -f server/config.php
+          ! grep -RIE --exclude='config.example.php' '(password|secret|api[_-]?key)[[:space:]]*=[[:space:]]*["'\''"][^"'\'']+' server docs
