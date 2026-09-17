@@ -25,7 +25,10 @@
     if (!raw) return null;
     try {
       const url = new URL(raw, location.href);
-      const id = Number(url.searchParams.get('vehicle'));
+      if (url.origin !== location.origin || url.pathname !== location.pathname) return null;
+      const rawId = url.searchParams.get('vehicle');
+      if (!/^\\d+$/.test(rawId || '')) return null;
+      const id = Number(rawId);
       if (id) return id;
     } catch (_) {}
     const m = String(raw).match(/(?:vehicle[:=]|pojazd[:=])\s*(\d+)/i);
@@ -46,14 +49,7 @@
 
   function loadQrLibrary() {
     if (window.Html5Qrcode) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-      s.async = true;
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('Nie udało się załadować modułu skanera QR.'));
-      document.head.appendChild(s);
-    });
+    return Promise.reject(new Error('Skaner QR nie jest dostępny offline. Użyj aparatu telefonu albo wybierz pojazd ręcznie.'));
   }
 
   async function stopScanner() {
