@@ -139,12 +139,20 @@ $vehicleId = $fleet->saveVehicle($admin, $vehiclePayload);
 assert_true($vehicleId > 0, 'fleet admin should create a vehicle');
 assert_true(!array_key_exists('vin', $fleet->listVehicles($employee)[0]), 'employee fleet view must not expose VIN');
 assert_true($fleet->listVehicles($admin)[0]['vin'] === 'TMBJG7NE0J0123456', 'fleet admin should see vehicle details');
+$reservationDelegation = $workflow->create($employee, [
+    'destination' => 'Katowice',
+    'purpose' => 'Vehicle reservation integration test',
+    'date_from' => date('Y-m-d'),
+    'date_to' => date('Y-m-d', strtotime('+1 day')),
+    'transport' => 'company_car',
+]);
+$reservationDelegation = $workflow->transition((int) $reservationDelegation['id'], $manager, 'approve');
 $reservations = new VehicleReservationService($pdo);
 $reservationId = $reservations->create($employee, [
     'vehicle_id' => $vehicleId,
     'starts_at' => date('Y-m-d\\TH:i', strtotime('+2 hours')),
     'ends_at' => date('Y-m-d\\TH:i', strtotime('+4 hours')),
-    'delegation_id' => $delegation['id'],
+    'delegation_id' => $reservationDelegation['id'],
     'purpose' => 'Integration smoke test',
 ]);
 assert_true($reservationId > 0, 'vehicle reservation should be created');
