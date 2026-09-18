@@ -1,0 +1,78 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type DEPLOY to confirm code publication (database migrations are intentionally excluded).
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delegacje-flota-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ inputs.confirm == 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      EXPECTED_HOST_FINGERPRINT: 'SHA256:69hca9wp73iemBclnzwZt58oqxF5PQGaaGlg9wjJMo'
+    steps:
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY; do
+            test -n "${!name}" || { echo "::error::Missing repository secret: $name"; exit 1; }
+          done
+
+      - name: Check out release
+        uses: actions/checkout@v4
+
+      - name: Configure verified SSH access
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$DEPLOY_PORT" -t ed25519 "$DEPLOY_HOST" > ~/.ssh/known_hosts.candidate 2>/dev/null
+          ssh-keygen -lf ~/.ssh/known_hosts.candidate | grep -Fq "$EXPECTED_HOST_FINGERPRINT"
+          mv ~/.ssh/known_hosts.candidate ~/.ssh/known_hosts
+
+      - name: Publish application files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -az --checksum --itemize-changes \
+            --exclude '.env' \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'storage/' \
+            --exclude 'tests/' \
+            --exclude '.env.example' \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $DEPLOY_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+
+      - name: Run production preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && test -f .env && php scripts/preflight.php"
+
+      - name: Migration policy
+        run: |
+          echo "Database migrations are intentionally excluded from automated publication."
+          echo "Run only after a verified database backup and a pre-production migration test."
