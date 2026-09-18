@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY; do
+          for name in DEPLOY_PATH DEPLOY_SSH_KEY; do
             test -n "${!name}" || { echo "::error::Missing repository secret: $name"; exit 1; }
           done
 
