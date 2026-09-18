@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Delegacje i Flota">
+  <rect width="512" height="512" rx="105" fill="#0b6586"/>
+  <path d="M112 153h153c75 0 123 41 123 103 0 63-48 103-123 103H112V153Zm80 65v76h64c31 0 51-13 51-38s-20-38-51-38h-64Z" fill="#fff"/>
+  <path d="M310 151h40v205h-40z" fill="#aee8f5"/>
+</svg>

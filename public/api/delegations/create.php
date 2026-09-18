@@ -12,7 +12,8 @@ $service = new DelegationWorkflowService($pdo);
 
 try {
     $item = $service->create($user, json_input());
+    api_audit($pdo, (int) $user['id'], 'delegation.create', 'delegation', (int) $item['id']);
     api_response(['ok' => true, 'item' => $item], 201);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 422);
+    api_exception($e, 422);
 }

@@ -33,18 +33,31 @@ final class VehicleIncidentService
         if(!$incident) throw new RuntimeException('Nie znaleziono zgłoszenia.');
         if($action==='assign'){
             if(!$assignee) throw new RuntimeException('Wskaż osobę odpowiedzialną.');
+            $this->assertActiveAssignee($assignee);
+            if((string)$incident['status']==='resolved') throw new RuntimeException('Najpierw otwórz ponownie zamknięte zgłoszenie.');
             $q=$this->pdo->prepare("UPDATE vehicle_incidents SET assigned_to_user_id=:a,status='in_progress',updated_at=NOW() WHERE id=:id");$q->execute(['a'=>$assignee,'id'=>$id]);return;
         }
         if($action==='start'){
+            if((string)$incident['status']!=='open') throw new RuntimeException('Tylko nowe zgłoszenie można rozpocząć.');
+            if($assignee) $this->assertActiveAssignee($assignee);
             $q=$this->pdo->prepare("UPDATE vehicle_incidents SET status='in_progress',assigned_to_user_id=COALESCE(:a,assigned_to_user_id),updated_at=NOW() WHERE id=:id");$q->execute(['a'=>$assignee,'id'=>$id]);return;
         }
         if($action==='resolve'){
+            if(!in_array((string)$incident['status'],['open','in_progress'],true)) throw new RuntimeException('Zgłoszenie jest już zamknięte.');
             if(trim($note)==='') throw new RuntimeException('Dodaj opis wykonanej naprawy.');
             $q=$this->pdo->prepare("UPDATE vehicle_incidents SET status='resolved',resolution_note=:note,resolved_by=:uid,resolved_at=NOW(),updated_at=NOW() WHERE id=:id");$q->execute(['note'=>trim($note),'uid'=>(int)$user['id'],'id'=>$id]);return;
         }
         if($action==='reopen'){
+            if((string)$incident['status']!=='resolved') throw new RuntimeException('Tylko zamknięte zgłoszenie można otworzyć ponownie.');
             $q=$this->pdo->prepare("UPDATE vehicle_incidents SET status='open',resolution_note=NULL,resolved_by=NULL,resolved_at=NULL,updated_at=NOW() WHERE id=:id");$q->execute(['id'=>$id]);return;
         }
         throw new RuntimeException('Nieobsługiwana operacja.');
+    }
+
+    private function assertActiveAssignee(int $userId): void
+    {
+        $stmt=$this->pdo->prepare('SELECT id FROM auth_users WHERE id=:id AND active=1 LIMIT 1');
+        $stmt->execute(['id'=>$userId]);
+        if(!$stmt->fetchColumn()) throw new RuntimeException('Wybrana osoba jest nieaktywna lub nie istnieje.');
     }
 }

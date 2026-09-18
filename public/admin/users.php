@@ -19,6 +19,9 @@ if (!$user || !Authorization::hasRole($user, 'super_admin')) {
   <meta name="theme-color" content="#111827">
   <title>Użytkownicy — Delegacje + Flota</title>
   <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .admin-user-card{display:grid;gap:14px}.admin-user-summary{display:flex;justify-content:space-between;gap:12px}.admin-user-summary p{margin:4px 0;color:#64748b}.admin-user-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-user-editor{display:grid;gap:12px;padding-top:12px;border-top:1px solid #e5e7eb}.admin-user-editor input,.admin-user-editor select{box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px}.admin-user-editor fieldset{border:1px solid #d1d5db;border-radius:12px}.admin-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-role,.admin-user-editor .check-row{display:flex;align-items:center;gap:8px}.admin-role input,.admin-user-editor .check-row input{width:auto}.admin-editor-actions{display:flex;gap:8px;align-items:center}.hidden{display:none!important}@media(max-width:520px){.admin-user-summary{align-items:flex-start;flex-direction:column}.admin-roles{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 <div class="app-shell">
@@ -34,10 +37,10 @@ if (!$user || !Authorization::hasRole($user, 'super_admin')) {
       <div id="inviteAdminError" class="alert error" hidden></div>
       <form id="inviteAdminForm" class="form-card" style="box-shadow:none;border:0;padding:0">
         <label>Imię i nazwisko
-          <input name="displayName" autocomplete="name" required>
+          <input name="displayName" minlength="2" maxlength="190" autocomplete="name" required>
         </label>
         <label>E-mail
-          <input type="email" name="email" autocomplete="email" required>
+          <input type="email" name="email" maxlength="190" autocomplete="email" required>
         </label>
         <label>Rola
           <select name="roleCode">
@@ -68,6 +71,11 @@ if (!$user || !Authorization::hasRole($user, 'super_admin')) {
     <section>
       <div class="section-heading"><h2>Konta</h2><button id="refreshUsers" class="mini-action" type="button">↻</button></div>
       <div id="usersList" class="stack"><article class="card empty-card"><div>Ładowanie…</div></article></div>
+    </section>
+
+    <section>
+      <div class="section-heading"><h2>Ostatnie zdarzenia bezpieczeństwa</h2><button id="refreshAudit" class="mini-action" type="button" aria-label="Odśwież dziennik">↻</button></div>
+      <div id="auditList" class="stack"><article class="card empty-card"><div>Ładowanie…</div></article></div>
     </section>
   </main>
 </div>

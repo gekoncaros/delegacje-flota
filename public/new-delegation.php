@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
+if (app_mode() === 'production') {
+    redirect('./mobile.php?view=new');
+}
+
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,25 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        if (app_mode() === 'production') {
-            $userId = require_production_user();
-            $services = production_services();
-
-            $newId = $services['delegations']->createForUser($userId, [
-                'destination' => $destination,
-                'purpose' => $purpose,
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
-                'status' => 'draft',
-            ]);
-
-            $services['activity']->log($userId, 'delegation.create', 'delegation', $newId, [
-                'transport' => $transport,
-            ]);
-
-            redirect('./delegation.php?id=' . $newId);
-        }
-
         $nextId = count($_SESSION['demo_delegations']) + 1;
         $_SESSION['demo_delegations'][] = [
             'id' => $nextId,

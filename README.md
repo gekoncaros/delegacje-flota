@@ -4,6 +4,8 @@ System obsługi delegacji służbowych i floty z interfejsem WWW oraz PWA.
 
 ## Architektura
 - jedna aplikacja PHP 8.x + MySQL/MariaDB
+- `public/` jest jedynym document rootem i punktem wejścia aplikacji
+- `src/` zawiera usługi domenowe, a `database/migrations/` wersjonowane zmiany schematu
 - PWA dla pracowników, kierowców i przełożonych
 - panel WWW dla administracji i księgowości
 - modułowa Flota
@@ -34,15 +36,21 @@ Przed merge należy sprawdzić co najmniej:
 ### Audyt 2026-09-18
 Rozpoczęto systematyczny hardening aplikacji: service worker, PWA manifest, QR quick-start, walidacja wejścia oraz eliminacja zależności runtime od zewnętrznego CDN.
 
-## Fundament produkcyjny
+## Zintegrowany fundament produkcyjny
 
-Katalog `server/` zawiera przygotowany backend PHP 8 + MySQL/MariaDB:
+Kanoniczna aplikacja znajduje się w `public/`, `src/`, `config/` i `database/`. Katalog `server/` jest starszym szkieletem referencyjnym i nie powinien być uruchamiany równolegle. Aktualny backend zapewnia:
 - sesje HttpOnly/Secure/SameSite,
+- wspólne nagłówki CSP, HSTS (dla HTTPS), anty-framing i ograniczenie uprawnień przeglądarki,
+- limit bezczynności i maksymalny czas sesji,
 - logowanie z `password_hash/password_verify`,
+- samodzielną zmianę hasła z odnowieniem identyfikatora sesji,
 - RBAC dla pracownika, przełożonego, księgowości, floty i Super Admina,
-- API delegacji i decyzji przełożonego,
-- serwerowy audit log,
-- przygotowany schemat bazy,
+- API delegacji, decyzji przełożonego, floty, rezerwacji, usterek i kosztów,
+- administrację pojazdami, przypisaniami, przebiegiem oraz terminami OC i badań,
+- dokumenty kosztów poza document rootem, pobierane po autoryzacji,
+- serwerowy audit log z podglądem dla Super Admina oraz osobnym rejestrem prób logowania,
+- zarządzanie użytkownikami, rolami, przełożonymi i aktywnością kont,
+- przygotowane migracje bazy `001`–`009`,
 - konfigurację poza repozytorium.
 
-Instalacja: skopiuj `server/config.example.php` do `server/config.php`, uzupełnij dane bazy, zaimportuj `server/schema.sql` i skieruj HTTPS na aplikację. Plik `server/config.php` nie może być commitowany.
+Instalacja i kontrola przedwdrożeniowa są opisane w `deploy/PRODUCTION-RUNBOOK.md`. Nie należy wykonywać migracji na produkcji bez backupu i wcześniejszego testu na oddzielnej bazie.

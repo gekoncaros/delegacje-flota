@@ -3,8 +3,10 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/_api.php';
 
 require_method('POST');
-current_api_user($auth);
+$user = current_api_user($auth);
 require_csrf();
+
+api_audit($pdo, (int) $user['id'], 'auth.logout', 'user', (int) $user['id']);
 
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {

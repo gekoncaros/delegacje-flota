@@ -17,6 +17,7 @@ $ttlHours = (int)($input['ttlHours'] ?? 48);
 
 try {
     $token = $invitations->create($email, $displayName, $roleCode, (int)$user['id'], $ttlHours);
+    api_audit($pdo, (int) $user['id'], 'admin.invitation.create', 'invitation', null, ['role' => $roleCode]);
     $baseUrl = rtrim((string)($config['url'] ?? getenv('APP_URL') ?: ''), '/');
     if ($baseUrl === '') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -31,7 +32,7 @@ try {
         'expiresInHours' => max(1, min(168, $ttlHours)),
     ], 201);
 } catch (InvalidArgumentException $e) {
-    api_error($e->getMessage(), 422);
+    api_exception($e, 422);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 409);
+    api_exception($e, 409);
 }

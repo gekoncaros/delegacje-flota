@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace Delegacje\Security;
 
+final class AccessDeniedException extends \RuntimeException
+{
+}
+
 final class Authorization
 {
     public static function hasRole(array $user, string $role): bool
@@ -23,8 +27,7 @@ final class Authorization
     public static function requireAnyRole(array $user, array $roles): void
     {
         if (!self::hasAnyRole($user, $roles)) {
-            http_response_code(403);
-            throw new \RuntimeException('Brak uprawnień do wykonania tej operacji.');
+            throw new AccessDeniedException('Brak uprawnień do wykonania tej operacji.');
         }
     }
 }

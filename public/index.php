@@ -6,7 +6,11 @@ if (app_mode() === 'production') {
     $userId = require_production_user();
     $user = current_user();
     $userName = (string)($user['display_name'] ?? 'Użytkownik');
-    $recentDelegations = production_services()['delegations']->recentForUser($userId, 20);
+    $visibleDelegations = production_services()['workflow']->listForUser($user);
+    $recentDelegations = array_values(array_filter(
+        $visibleDelegations,
+        static fn (array $delegation): bool => (int)($delegation['user_id'] ?? 0) === $userId
+    ));
     $currentTrip = null;
     foreach ($recentDelegations as $delegation) {
         $status = (string)($delegation['trip_status'] ?? $delegation['status'] ?? '');
@@ -57,13 +61,13 @@ if (app_mode() === 'production') {
           <h2>Nowa delegacja</h2>
           <p>Utwórz wniosek i przejdź cały mobilny proces od startu do rozliczenia.</p>
         </div>
-        <a class="primary-btn light-btn" href="./new-delegation.php">+ Nowa delegacja</a>
+        <a class="primary-btn light-btn" href="<?= app_mode() === 'production' ? './mobile.php?view=new' : './new-delegation.php' ?>">+ Nowa delegacja</a>
       </section>
 
       <section>
         <div class="section-heading"><h2>Aktualna delegacja</h2></div>
         <?php if ($currentTrip): ?>
-          <a class="card active-trip" href="./delegation.php?id=<?= (int)$currentTrip['id'] ?>">
+          <a class="card active-trip" href="<?= app_mode() === 'production' ? './mobile.php?delegation_id=' . (int) $currentTrip['id'] : './delegation.php?id=' . (int) $currentTrip['id'] ?>">
             <div>
               <span class="status-pill">w trasie</span>
               <h3><?= h((string)$currentTrip['destination']) ?></h3>
@@ -82,11 +86,12 @@ if (app_mode() === 'production') {
       <section>
         <div class="section-heading"><h2>Szybkie akcje</h2></div>
         <div class="quick-grid">
-          <a class="action-card" href="./expense.php"><span>📷</span><strong>Paragon</strong><small>Zrób zdjęcie</small></a>
-          <a class="action-card" href="./expense.php"><span>⛽</span><strong>Tankowanie</strong><small>Dodaj koszt</small></a>
-          <a class="action-card" href="./expense.php"><span>🧾</span><strong>Wydatek</strong><small>Dodaj dokument</small></a>
-          <a class="action-card" href="./vehicles.php"><span>🚗</span><strong>Pojazd</strong><small>Moja flota</small></a>
-          <a class="action-card" href="./vehicles.php"><span>⚠️</span><strong>Problem</strong><small>Zgłoś usterkę</small></a>
+          <a class="action-card" href="<?= app_mode() === 'production' ? './expenses.php' : './expense.php' ?>"><span>📷</span><strong>Paragon</strong><small>Zrób zdjęcie</small></a>
+          <a class="action-card" href="<?= app_mode() === 'production' ? './expenses.php' : './expense.php' ?>"><span>⛽</span><strong>Tankowanie</strong><small>Dodaj koszt</small></a>
+          <a class="action-card" href="<?= app_mode() === 'production' ? './expenses.php' : './expense.php' ?>"><span>🧾</span><strong>Wydatek</strong><small>Dodaj dokument</small></a>
+          <a class="action-card" href="<?= app_mode() === 'production' ? './fleet.php' : './vehicles.php' ?>"><span>🚗</span><strong>Pojazd</strong><small>Moja flota</small></a>
+          <a class="action-card" href="<?= app_mode() === 'production' ? './fleet.php' : './vehicles.php' ?>"><span>⚠️</span><strong>Problem</strong><small>Zgłoś usterkę</small></a>
+          <?php if (app_mode() === 'production' && in_array('super_admin', $user['roles'] ?? [], true)): ?><a class="action-card" href="./admin/users.php"><span>⚙️</span><strong>Super Admin</strong><small>Konta i role</small></a><?php endif; ?>
           <button class="action-card install-card" id="installPwaButton" type="button" hidden><span>📲</span><strong>Zainstaluj</strong><small>Dodaj aplikację</small></button>
         </div>
       </section>
@@ -94,7 +99,7 @@ if (app_mode() === 'production') {
       <section>
         <div class="section-heading">
           <h2>Ostatnie delegacje</h2>
-          <a href="./delegations.php">Pokaż wszystkie</a>
+          <a href="<?= app_mode() === 'production' ? './mobile.php' : './delegations.php' ?>">Pokaż wszystkie</a>
         </div>
 
         <?php if (!$recentDelegations): ?>
@@ -105,7 +110,7 @@ if (app_mode() === 'production') {
         <?php else: ?>
           <div class="stack">
             <?php foreach ($recentDelegations as $delegation): ?>
-              <a class="card list-card" href="./delegation.php?id=<?= (int)$delegation['id'] ?>">
+              <a class="card list-card" href="<?= app_mode() === 'production' ? './mobile.php?delegation_id=' . (int) $delegation['id'] : './delegation.php?id=' . (int) $delegation['id'] ?>">
                 <div><strong><?= h((string)$delegation['destination']) ?></strong><p><?= h((string)($delegation['number'] ?? ('#' . $delegation['id']))) ?></p></div>
                 <span class="status-pill"><?= h((string)($delegation['trip_status'] ?? $delegation['status'] ?? '')) ?></span>
               </a>
@@ -117,9 +122,9 @@ if (app_mode() === 'production') {
 
     <nav class="bottom-nav" aria-label="Nawigacja główna">
       <a class="active" href="./"><span>⌂</span><small>Start</small></a>
-      <a href="./delegations.php"><span>🧳</span><small>Delegacje</small></a>
-      <a href="./vehicles.php"><span>🚗</span><small>Flota</small></a>
-      <a href="#profile"><span>👤</span><small>Profil</small></a>
+      <a href="<?= app_mode() === 'production' ? './mobile.php' : './delegations.php' ?>"><span>🧳</span><small>Delegacje</small></a>
+      <a href="<?= app_mode() === 'production' ? './fleet.php' : './vehicles.php' ?>"><span>🚗</span><small>Flota</small></a>
+      <a href="<?= app_mode() === 'production' ? './profile.php' : '#profile' ?>"><span>👤</span><small>Profil</small></a>
     </nav>
   </div>
 

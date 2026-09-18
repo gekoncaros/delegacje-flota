@@ -14,10 +14,13 @@ if ($email === '' || $password === '') {
 try {
     $user = $auth->login($email, $password);
     session_regenerate_id(true);
+    \Delegacje\Security\SessionSecurity::bindCredentialVersion((string) ($user['_credential_version'] ?? ''));
+    unset($user['_credential_version']);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['roles'] = $user['roles'];
     $_SESSION['display_name'] = $user['display_name'];
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    \Delegacje\Security\SessionSecurity::markAuthenticated();
 
     api_response([
         'ok' => true,
@@ -25,5 +28,5 @@ try {
         'csrfToken' => $_SESSION['csrf_token'],
     ]);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 401);
+    api_exception($e, 401);
 }

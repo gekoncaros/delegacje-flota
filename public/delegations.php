@@ -3,11 +3,10 @@ declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
 if (app_mode() === 'production') {
-    $userId = require_production_user();
-    $delegations = production_services()['delegations']->recentForUser($userId, 50);
-} else {
-    $delegations = array_reverse($_SESSION['demo_delegations']);
+    redirect('./mobile.php');
 }
+
+$delegations = array_reverse($_SESSION['demo_delegations']);
 ?>
 <!doctype html>
 <html lang="pl">

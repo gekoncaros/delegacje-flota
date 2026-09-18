@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
+if (app_mode() === 'production') {
+    redirect('./mobile.php');
+}
+
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $delegation = demo_delegation_by_id($id);
 

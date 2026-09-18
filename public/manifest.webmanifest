@@ -7,5 +7,12 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#111827",
-  "icons": []
+  "icons": [
+    {
+      "src": "./assets/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

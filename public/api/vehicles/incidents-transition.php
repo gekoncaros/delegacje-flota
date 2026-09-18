@@ -15,5 +15,9 @@ $assignee=isset($payload['assigned_to_user_id'])?(int)$payload['assigned_to_user
 $note=(string)($payload['note']??'');
 if($id<1||$action==='') api_error('Brak danych operacji.',422);
 $service=new VehicleIncidentService($pdo);
-try{$service->transition($user,$id,$action,$assignee,$note);api_response(['ok'=>true]);}
-catch(RuntimeException $e){api_error($e->getMessage(),422);}
+try{
+    $service->transition($user,$id,$action,$assignee,$note);
+    api_audit($pdo, (int) $user['id'], 'vehicle_incident.'.$action, 'vehicle_incident', $id, ['assigned_to_user_id' => $assignee]);
+    api_response(['ok'=>true]);
+}
+catch(RuntimeException $e){api_exception($e,422);}

@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
+if (app_mode() === 'production') {
+    redirect('./expenses.php');
+}
+
 $delegationId = (int)($_GET['delegation_id'] ?? $_POST['delegation_id'] ?? 0);
 $delegation = $delegationId ? demo_delegation_by_id($delegationId) : null;
 $errors = [];
@@ -20,39 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_FILES['document']) && $_FILES['document']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $file = $_FILES['document'];
-
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors[] = 'Nie udało się przesłać dokumentu.';
-        } elseif ($file['size'] > 10 * 1024 * 1024) {
-            $errors[] = 'Plik jest większy niż 10 MB.';
-        } else {
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            $mime = $finfo->file($file['tmp_name']);
-            $allowed = [
-                'image/jpeg' => 'jpg',
-                'image/png' => 'png',
-                'application/pdf' => 'pdf',
-            ];
-
-            if (!isset($allowed[$mime])) {
-                $errors[] = 'Dozwolone są pliki JPG, PNG i PDF.';
-            } else {
-                $uploadDir = dirname(__DIR__) . '/uploads';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0750, true);
-                }
-
-                $safeName = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
-                $target = $uploadDir . '/' . $safeName;
-
-                if (!is_dir($uploadDir) || !is_writable($uploadDir) || !move_uploaded_file($file['tmp_name'], $target)) {
-                    $errors[] = 'Serwer nie może zapisać pliku. Sprawdź uprawnienia katalogu uploads.';
-                } else {
-                    $storedPath = 'uploads/' . $safeName;
-                }
-            }
-        }
+        $errors[] = 'Tryb demonstracyjny nie zapisuje przesyłanych dokumentów. Użyj modułu produkcyjnego po zalogowaniu.';
     }
 
     if (!$errors) {
@@ -115,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <label class="file-drop">📷 Zdjęcie paragonu / dokument
         <input type="file" name="document" accept="image/jpeg,image/png,application/pdf" capture="environment">
-        <small>JPG, PNG lub PDF, maks. 10 MB</small>
+        <small>W trybie demonstracyjnym plik nie jest zapisywany.</small>
       </label>
 
       <button class="primary-btn dark-btn full" type="submit">Zapisz wydatek</button>
