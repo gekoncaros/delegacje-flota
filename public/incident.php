@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
+if (app_mode() === 'production') {
+    redirect('./fleet.php');
+}
+
 $vehicleId = (int)($_GET['vehicle_id'] ?? $_POST['vehicle_id'] ?? 0);
 $vehicle = null;
 foreach ($_SESSION['demo_vehicles'] as $candidate) {

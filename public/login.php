@@ -2,19 +2,16 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/Support/Env.php';
+require_once dirname(__DIR__) . '/src/Security/SessionSecurity.php';
+require_once dirname(__DIR__) . '/src/Security/SecurityHeaders.php';
 use Delegacje\Support\Env;
+use Delegacje\Security\SessionSecurity;
+use Delegacje\Security\SecurityHeaders;
 Env::load(dirname(__DIR__) . '/.env');
+$config = require dirname(__DIR__) . '/config/app.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_name('delegacje_session');
-    session_set_cookie_params([
-        'httponly' => true,
-        'secure' => filter_var(getenv('SESSION_SECURE') ?: 'true', FILTER_VALIDATE_BOOLEAN),
-        'samesite' => 'Lax',
-        'path' => '/',
-    ]);
-    session_start();
-}
+SessionSecurity::start($config);
+SecurityHeaders::send();
 
 if (!empty($_SESSION['user_id'])) {
     header('Location: ./');

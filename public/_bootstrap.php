@@ -10,30 +10,29 @@ require_once dirname(__DIR__) . '/src/Infrastructure/PdoDelegationRepository.php
 require_once dirname(__DIR__) . '/src/Infrastructure/PdoVehicleRepository.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/PdoDelegationEventRepository.php';
 require_once dirname(__DIR__) . '/src/Infrastructure/ActivityLogger.php';
+require_once dirname(__DIR__) . '/src/Application/DelegationWorkflowService.php';
 require_once dirname(__DIR__) . '/src/Security/AuthService.php';
 require_once dirname(__DIR__) . '/src/Security/Authorization.php';
+require_once dirname(__DIR__) . '/src/Security/SessionSecurity.php';
+require_once dirname(__DIR__) . '/src/Security/SecurityHeaders.php';
 
 use Delegacje\Infrastructure\ActivityLogger;
+use Delegacje\Application\DelegationWorkflowService;
 use Delegacje\Infrastructure\Database;
 use Delegacje\Infrastructure\PdoDelegationEventRepository;
 use Delegacje\Infrastructure\PdoDelegationRepository;
 use Delegacje\Infrastructure\PdoVehicleRepository;
 use Delegacje\Security\AuthService;
+use Delegacje\Security\SessionSecurity;
+use Delegacje\Security\SecurityHeaders;
 use Delegacje\Support\Env;
 
 Env::load(dirname(__DIR__) . '/.env');
 $appConfig = require dirname(__DIR__) . '/config/app.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_name('delegacje_session');
-    session_set_cookie_params([
-        'httponly' => true,
-        'secure' => filter_var(getenv('SESSION_SECURE') ?: 'true', FILTER_VALIDATE_BOOLEAN),
-        'samesite' => 'Lax',
-        'path' => '/',
-    ]);
-    session_start();
-}
+SessionSecurity::start($appConfig);
+
+SecurityHeaders::send();
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -81,6 +80,7 @@ function production_services(): array
     $services = [
         'pdo' => $pdo,
         'auth' => new AuthService($pdo),
+        'workflow' => new DelegationWorkflowService($pdo),
         'delegations' => new PdoDelegationRepository($pdo, $config['mapping']),
         'vehicles' => new PdoVehicleRepository($pdo, $config['mapping']),
         'events' => new PdoDelegationEventRepository($pdo),
@@ -111,7 +111,18 @@ function current_user(): ?array
         return null;
     }
 
-    return production_services()['auth']->userById($userId);
+    $user = production_services()['auth']->userById($userId);
+    if (!$user) {
+        return null;
+    }
+    if (!SessionSecurity::credentialVersionIsCurrent((string) ($user['_credential_version'] ?? ''))) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        return null;
+    }
+    unset($user['_credential_version']);
+    return $user;
 }
 
 function require_production_user(): int
@@ -123,7 +134,8 @@ function require_production_user(): int
     $user = current_user();
     if (!$user) {
         $_SESSION = [];
-        header('Location: ./login.php');
+        $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+        header('Location: ' . (str_contains($scriptName, '/admin/') ? '../login.php' : './login.php'));
         exit;
     }
 

@@ -21,6 +21,16 @@
 - szkody/usterki
 - dokumenty pojazdów
 
+## Zrealizowana integracja backendu
+- logowanie, sesje i RBAC
+- delegacje: utworzenie, akceptacja, start, zakończenie i księgowość
+- flota: lista pojazdów, rezerwacje i lifecycle usterek
+- administracja floty: dane pojazdu, przypisanie pracownika oraz terminy OC i badań
+- koszty: dokumenty za autoryzacją, akceptacja i wypłata
+- Super Admin: zaproszenia, role, przełożeni, aktywność kont i podgląd zdarzeń bezpieczeństwa
+- serwerowy audit log dla operacji modyfikujących dane i prób logowania
+- profil użytkownika: bezpieczna zmiana hasła i odnowienie sesji
+
 ## Etap 5
 - centrum powiadomień
 - Web Push

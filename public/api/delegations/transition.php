@@ -16,7 +16,8 @@ if ($id < 1 || $action === '') api_error('Brak delegacji lub operacji.', 422);
 $service = new DelegationWorkflowService($pdo);
 try {
     $item = $service->transition($id, $user, $action, $data);
+    api_audit($pdo, (int) $user['id'], 'delegation.'.$action, 'delegation', $id);
     api_response(['ok' => true, 'item' => $item]);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 422);
+    api_exception($e, 422);
 }

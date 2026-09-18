@@ -14,7 +14,8 @@ if ($id < 1) api_error('Brak identyfikatora rezerwacji.', 422);
 $service = new VehicleReservationService($pdo);
 try {
     $service->cancel($user, $id);
+    api_audit($pdo, (int) $user['id'], 'vehicle_reservation.cancel', 'vehicle_reservation', $id);
     api_response(['ok'=>true]);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 422);
+    api_exception($e, 422);
 }

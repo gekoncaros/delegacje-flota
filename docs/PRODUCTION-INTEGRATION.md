@@ -3,7 +3,7 @@
 Aplikacja posiada dwa tryby:
 
 - APP_MODE=demo — dane testowe w sesji PHP,
-- APP_MODE=production — dane przez PDO i mapowanie istniejącej bazy.
+- APP_MODE=production — dane przez PDO i kanoniczne tabele z migracji `001`–`009`.
 
 ## Bezpieczna kolejność
 
@@ -11,8 +11,8 @@ Aplikacja posiada dwa tryby:
 2. Skopiuj aktualny kod produkcyjny do osobnej gałęzi Git.
 3. Nie commituj .env, haseł, kluczy ani dokumentów użytkowników.
 4. Na kopii bazy uruchom skrypt scripts/inspect-schema.php.
-5. Na podstawie schema.json ustaw mapowanie tabel i kolumn w .env.
-6. Przetestuj odczyt delegacji i pojazdów.
+5. Na oddzielnej bazie testowej uruchom migracje `001`–`009` w kolejności.
+6. Przetestuj pełny przepływ: Flota → Delegacje → Akceptacje → Księgowość → Super Admin.
 7. Dopiero potem ustaw APP_MODE=production.
 
 ## Inspekcja schematu
@@ -23,9 +23,11 @@ php scripts/inspect-schema.php > schema.json
 
 Skrypt eksportuje wyłącznie nazwy tabel, kolumn i ich typy. Nie eksportuje rekordów ani danych osobowych.
 
-## Mapowanie
+## Starsze mapowanie
 
-Przykład:
+Zmienne `DB_*_TABLE` pozostają wyłącznie dla zgodności ze starszą warstwą importu. Kanoniczny runtime korzysta z tabel `auth_users`, `app_delegations`, `vehicles`, `vehicle_reservations`, `vehicle_incidents` i `app_expenses`.
+
+Przykład konfiguracji starszego importu:
 
 APP_MODE=production
 DB_DELEGATIONS_TABLE=business_trips
@@ -40,4 +42,4 @@ DB_DELEGATION_STATUS_COLUMN=status
 
 Warstwa PDO używa prepared statements dla danych wejściowych. Nazwy tabel i kolumn są dopuszczane tylko, jeśli składają się z liter, cyfr i znaku podkreślenia.
 
-Aktualny moduł Flota zakłada strukturę nowych tabel z migracji projektu. Jeśli produkcja ma już własną tabelę pojazdów, mapowanie rozszerzymy po analizie schematu.
+Moduły Flota, Delegacje i Księgowość zakładają strukturę tabel z migracji projektu. Integrację z istniejącymi tabelami należy wykonać jako jawny, przetestowany import do kanonicznego modelu, bez równoległego uruchamiania dwóch backendów.

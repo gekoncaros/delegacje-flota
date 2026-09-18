@@ -18,6 +18,10 @@ try {
     $_SESSION['roles'] = $user['roles'];
     $_SESSION['display_name'] = $user['display_name'];
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    \Delegacje\Security\SessionSecurity::markAuthenticated();
+    $createdUser = $auth->userById((int) $user['id']);
+    \Delegacje\Security\SessionSecurity::bindCredentialVersion((string) ($createdUser['_credential_version'] ?? ''));
+    api_audit($pdo, (int) $user['id'], 'auth.invitation.accept', 'user', (int) $user['id']);
 
     api_response([
         'ok' => true,
@@ -25,7 +29,7 @@ try {
         'csrfToken' => $_SESSION['csrf_token'],
     ]);
 } catch (InvalidArgumentException $e) {
-    api_error($e->getMessage(), 422);
+    api_exception($e, 422);
 } catch (RuntimeException $e) {
-    api_error($e->getMessage(), 410);
+    api_exception($e, 410);
 }

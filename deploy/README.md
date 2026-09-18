@@ -8,7 +8,7 @@ Celem katalogu `deploy` jest przygotowanie systemu do powtarzalnych wdrożeń dl
 - MySQL 8 / MariaDB 10.6+
 - rozszerzenia PHP: PDO, pdo_mysql, json, fileinfo, mbstring
 - HTTPS
-- zapisywalne katalogi `storage` i `uploads`
+- zapisywalny katalog `storage` poza publicznym document rootem
 
 ## Bezpieczna kolejność wdrożenia
 
@@ -41,7 +41,7 @@ Nie należy przenosić:
 
 - HTTPS działa,
 - `.env` nie jest dostępny z WWW,
-- katalog `uploads` nie wykonuje PHP,
+- katalog `storage/expenses` znajduje się poza `public/` i nie jest dostępny bez autoryzowanego endpointu,
 - backup bazy został wykonany,
 - role i uprawnienia przetestowane,
 - e-maile testowe trafiają do właściwych odbiorców,

@@ -5,6 +5,8 @@
   const viewList = document.getElementById('viewList');
   const viewNew = document.getElementById('viewNew');
   const form = document.getElementById('newDelegationForm');
+  const search = new URLSearchParams(window.location.search);
+  const initialDelegationId = Number(search.get('delegation_id') || 0);
   let items = [];
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -61,6 +63,7 @@
     if (x.status==='pending' && ((roles.has('manager') && isAssignedManager)||roles.has('super_admin'))) actions += actionButton('✓ Zatwierdź','approve')+actionButton('✕ Odrzuć','reject','danger');
     if (x.status==='approved' && isOwner) actions += actionButton('▶ Rozpocznij','start');
     if (x.status==='started' && isOwner) actions += actionButton('■ Zakończ','finish');
+    if ((x.status==='started'||x.status==='finished') && isOwner) actions += `<a class="primary-btn dark-btn" href="./expenses.php?delegation_id=${Number(x.id)}">+ Dodaj koszt</a>`;
     if (x.status==='finished' && (roles.has('accounting')||roles.has('super_admin'))) actions += actionButton('Zaksięguj','accounting_book')+actionButton('Oznacz wypłatę','accounting_pay');
     detail.innerHTML=`<article class="card"><button id="backBtn" class="back">←</button><h2>${esc(x.destination)}</h2><p class="muted">${esc(x.number)}</p><div class="detail"><div><span>Pracownik</span><strong>${esc(x.employee_name)}</strong></div><div><span>Przełożony</span><strong>${esc(x.manager_name||'brak')}</strong></div><div><span>Status</span><strong>${esc(statusLabel(x.status))}</strong></div><div><span>Termin</span><strong>${esc(x.date_from)} → ${esc(x.date_to)}</strong></div><div><span>Cel</span><strong>${esc(x.purpose)}</strong></div><div><span>Księgowość</span><strong>${esc(x.accounting_status)}</strong></div></div><div class="mobile-actions">${actions}</div></article>`;
     document.getElementById('backBtn').onclick=()=>load();
@@ -89,5 +92,11 @@
   document.getElementById('tabApprovals')?.addEventListener('click',()=>load('approvals'));
   document.getElementById('tabAccounting')?.addEventListener('click',()=>load('accounting'));
   form.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(form);const payload=Object.fromEntries(f.entries());try{await api('./api/delegations/create.php',{method:'POST',body:JSON.stringify(payload)});form.reset();await load()}catch(err){alert(err.message)}});
-  load();
+  if (search.get('view') === 'new') {
+    document.getElementById('tabNew').click();
+  } else {
+    load().then(() => {
+      if (initialDelegationId > 0) openDetail(initialDelegationId);
+    });
+  }
 })();

@@ -3,11 +3,10 @@ declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
 if (app_mode() === 'production') {
-    $userId = require_production_user();
-    $vehicles = production_services()['vehicles']->allVisibleForUser($userId);
-} else {
-    $vehicles = $_SESSION['demo_vehicles'];
+    redirect('./fleet.php');
 }
+
+$vehicles = $_SESSION['demo_vehicles'];
 ?>
 <!doctype html>
 <html lang="pl">

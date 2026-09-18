@@ -157,7 +157,8 @@ final class DelegationWorkflowService
 
         $roles = $user['roles'] ?? [];
         $uid = (int)$user['id'];
-        $visible = (int)$row['user_id'] === $uid || (int)($row['manager_id'] ?? 0) === $uid || in_array('accounting', $roles, true) || in_array('super_admin', $roles, true);
+        $isAssignedManager = (int)($row['manager_id'] ?? 0) === $uid && in_array('manager', $roles, true);
+        $visible = (int)$row['user_id'] === $uid || $isAssignedManager || in_array('accounting', $roles, true) || in_array('super_admin', $roles, true);
         if (!$visible) throw new RuntimeException('Brak dostępu do delegacji.');
         return $row;
     }
@@ -172,7 +173,8 @@ final class DelegationWorkflowService
     private function requireManager(array $row, array $user, array $roles): void
     {
         $uid = (int)$user['id'];
-        if ((int)($row['manager_id'] ?? 0) !== $uid && !in_array('super_admin', $roles, true)) {
+        $isAssignedManager = (int)($row['manager_id'] ?? 0) === $uid && in_array('manager', $roles, true);
+        if (!$isAssignedManager && !in_array('super_admin', $roles, true)) {
             throw new RuntimeException('Tylko przypisany przełożony może podjąć decyzję.');
         }
     }

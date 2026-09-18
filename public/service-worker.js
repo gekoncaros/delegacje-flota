@@ -1,5 +1,13 @@
-const CACHE_NAME = 'delegacje-shell-v1';
-const STATIC_ASSETS = ['./', './offline.html', './manifest.webmanifest'];
+const CACHE_NAME = 'delegacje-shell-v2';
+// Never cache authenticated HTML or API responses. The offline cache contains
+// only the public application shell and cannot expose company data after logout.
+const STATIC_ASSETS = [
+  './offline.html',
+  './manifest.webmanifest',
+  './assets/css/app.css',
+  './assets/js/pwa.js',
+  './assets/icons/app-icon.svg'
+];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)));

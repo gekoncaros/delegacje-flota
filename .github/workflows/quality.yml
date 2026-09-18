@@ -1,20 +1,57 @@
 name: Quality
 on:
   push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   static-checks:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: test-root-password
+          MARIADB_DATABASE: delegacje_test
+          MARIADB_USER: delegacje_test
+          MARIADB_PASSWORD: test-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: delegacje_test
+      DB_USER: delegacje_test
+      DB_PASSWORD: test-password
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, fileinfo
       - name: Validate JSON
-        run: python -m json.tool docs/manifest.webmanifest >/dev/null
+        run: |
+          python -m json.tool docs/manifest.webmanifest >/dev/null
+          python -m json.tool manifest.webmanifest >/dev/null
+          python -m json.tool public/manifest.webmanifest >/dev/null
       - name: PHP syntax
-        run: find server -name '*.php' ! -name 'config.php' -print0 | xargs -0 -n1 php -l
+        run: find public src scripts server config tests -name '*.php' ! -name 'config.php' -print0 | xargs -0 -n1 php -l
+      - name: Integration smoke test on isolated database
+        run: php tests/integration-smoke.php
+      - name: Application preflight on isolated database
+        run: php scripts/preflight.php
+      - name: JavaScript syntax
+        run: find public/assets/js docs -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: No committed secrets
         run: |
           test ! -f server/config.php
+          test -z "$(git ls-files | grep -E '(^|/)\.env$|(^|/)config\.php$' || true)"
+          ! git grep -nE -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
           ! grep -RIE --exclude='config.example.php' '(password|secret|api[_-]?key)[[:space:]]*=[[:space:]]*["'\''"][^"'\'']+' server docs

@@ -42,22 +42,42 @@ function has_role(array $roles, string $role): bool
     <section>
       <div class="section-heading"><h2>Moje moduły</h2></div>
       <div class="quick-grid">
-        <a class="action-card" href="./delegations.php"><span>🧳</span><strong>Delegacje</strong><small>Moje wyjazdy</small></a>
-        <a class="action-card" href="./vehicles.php"><span>🚗</span><strong>Flota</strong><small>Pojazdy</small></a>
+        <a class="action-card" href="./mobile.php"><span>🧳</span><strong>Delegacje</strong><small>Moje wyjazdy</small></a>
+        <a class="action-card" href="./fleet.php"><span>🚗</span><strong>Flota</strong><small>Pojazdy</small></a>
         <?php if (has_role($roles, 'manager')): ?>
-          <a class="action-card" href="./delegations.php"><span>✓</span><strong>Akceptacje</strong><small>Wnioski pracowników</small></a>
+          <a class="action-card" href="./mobile.php"><span>✓</span><strong>Akceptacje</strong><small>Wnioski pracowników</small></a>
         <?php endif; ?>
         <?php if (has_role($roles, 'accounting')): ?>
-          <a class="action-card" href="#accounting"><span>🧾</span><strong>Księgowość</strong><small>Rozliczenia</small></a>
+          <a class="action-card" href="./expenses.php"><span>🧾</span><strong>Księgowość</strong><small>Rozliczenia</small></a>
         <?php endif; ?>
         <?php if (has_role($roles, 'fleet_admin')): ?>
-          <a class="action-card" href="./vehicles.php"><span>🛠️</span><strong>Admin floty</strong><small>Terminy i pojazdy</small></a>
+          <a class="action-card" href="./fleet.php"><span>🛠️</span><strong>Admin floty</strong><small>Terminy i pojazdy</small></a>
         <?php endif; ?>
         <?php if (has_role($roles, 'super_admin')): ?>
           <a class="action-card" href="./admin/users.php"><span>🛡️</span><strong>Super Admin</strong><small>Użytkownicy i role</small></a>
         <?php endif; ?>
       </div>
     </section>
+
+    <?php if (app_mode() === 'production'): ?>
+    <section class="form-card">
+      <h2>Zmień hasło</h2>
+      <p class="hint">Użyj co najmniej 12 znaków. Po zmianie identyfikator sesji zostanie odnowiony.</p>
+      <div id="passwordMessage" class="alert" hidden></div>
+      <form id="passwordForm" class="form-card" style="box-shadow:none;border:0;padding:0">
+        <label>Obecne hasło
+          <input type="password" name="currentPassword" maxlength="1024" autocomplete="current-password" required>
+        </label>
+        <label>Nowe hasło
+          <input type="password" name="newPassword" minlength="12" maxlength="72" autocomplete="new-password" required>
+        </label>
+        <label>Powtórz nowe hasło
+          <input type="password" name="newPasswordConfirm" minlength="12" maxlength="72" autocomplete="new-password" required>
+        </label>
+        <button class="primary-btn dark-btn full" type="submit">Zmień hasło</button>
+      </form>
+    </section>
+    <?php endif; ?>
 
     <section class="card">
       <button id="logoutButton" class="primary-btn dark-btn full" type="button">Wyloguj się</button>
@@ -66,19 +86,55 @@ function has_role(array $roles, string $role): bool
 
   <nav class="bottom-nav" aria-label="Nawigacja główna">
     <a href="./"><span>⌂</span><small>Start</small></a>
-    <a href="./delegations.php"><span>🧳</span><small>Delegacje</small></a>
-    <a href="./vehicles.php"><span>🚗</span><small>Flota</small></a>
+    <a href="./mobile.php"><span>🧳</span><small>Delegacje</small></a>
+    <a href="./fleet.php"><span>🚗</span><small>Flota</small></a>
     <a class="active" href="./profile.php"><span>👤</span><small>Profil</small></a>
   </nav>
 </div>
 <script>
+let csrfToken = '';
+async function getSession() {
+  if (csrfToken) return csrfToken;
+  const response = await fetch('./api/auth/me.php', {credentials:'same-origin'});
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.csrfToken) throw new Error(payload.error || 'Sesja wygasła.');
+  csrfToken = payload.csrfToken;
+  return csrfToken;
+}
+document.getElementById('passwordForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = document.getElementById('passwordMessage');
+  const data = new FormData(form);
+  const currentPassword = String(data.get('currentPassword') || '');
+  const newPassword = String(data.get('newPassword') || '');
+  const confirmation = String(data.get('newPasswordConfirm') || '');
+  message.hidden = true;
+  if (newPassword !== confirmation) {
+    message.className = 'alert error'; message.textContent = 'Nowe hasła nie są identyczne.'; message.hidden = false; return;
+  }
+  const submit = form.querySelector('[type="submit"]');
+  submit.disabled = true;
+  try {
+    const token = await getSession();
+    const response = await fetch('./api/auth/change-password.php', {
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':token},
+      body:JSON.stringify({currentPassword,newPassword})
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.ok === false) throw new Error(payload.error || 'Nie udało się zmienić hasła.');
+    csrfToken = payload.csrfToken || '';
+    form.reset(); message.className = 'alert success'; message.textContent = 'Hasło zostało zmienione.'; message.hidden = false;
+  } catch (error) {
+    message.className = 'alert error'; message.textContent = error.message || 'Nie udało się zmienić hasła.'; message.hidden = false;
+  } finally { submit.disabled = false; }
+});
 document.getElementById('logoutButton')?.addEventListener('click', async () => {
-  const me = await fetch('./api/auth/me.php', {credentials:'same-origin'}).then(r => r.json()).catch(() => ({}));
-  if (!me.csrfToken) return;
-  await fetch('./api/auth/logout.php', {
-    method:'POST', credentials:'same-origin', headers:{'X-CSRF-Token':me.csrfToken}
-  });
-  location.replace('./login.php');
+  try {
+    const token = await getSession();
+    await fetch('./api/auth/logout.php', {method:'POST',credentials:'same-origin',headers:{'X-CSRF-Token':token}});
+  } finally { location.replace('./login.php'); }
 });
 </script>
 </body>

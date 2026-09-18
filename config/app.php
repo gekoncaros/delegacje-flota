@@ -13,6 +13,10 @@ return [
         'password' => getenv('DB_PASSWORD') ?: '',
         'charset' => 'utf8mb4',
     ],
+    'session' => [
+        'idle_timeout_seconds' => (int)(getenv('SESSION_IDLE_TIMEOUT') ?: 3600),
+        'absolute_timeout_seconds' => (int)(getenv('SESSION_ABSOLUTE_TIMEOUT') ?: 43200),
+    ],
     'mapping' => [
         'users_table' => getenv('DB_USERS_TABLE') ?: 'users',
         'delegations_table' => getenv('DB_DELEGATIONS_TABLE') ?: 'delegations',

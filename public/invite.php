@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+require_once dirname(__DIR__) . '/src/Security/SecurityHeaders.php';
+\Delegacje\Security\SecurityHeaders::send(true);
 $token = (string)($_GET['token'] ?? '');
 ?>
 <!doctype html>
@@ -23,10 +25,10 @@ $token = (string)($_GET['token'] ?? '');
       <form id="inviteForm" class="form-card" style="box-shadow:none;border:0;padding:0">
         <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
         <label>Hasło
-          <input type="password" name="password" minlength="12" autocomplete="new-password" required>
+          <input type="password" name="password" minlength="12" maxlength="72" autocomplete="new-password" required>
         </label>
         <label>Powtórz hasło
-          <input type="password" name="passwordConfirm" minlength="12" autocomplete="new-password" required>
+          <input type="password" name="passwordConfirm" minlength="12" maxlength="72" autocomplete="new-password" required>
         </label>
         <button id="inviteButton" class="primary-btn dark-btn full" type="submit">Aktywuj konto</button>
       </form>

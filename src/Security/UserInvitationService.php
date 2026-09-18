@@ -23,8 +23,11 @@ final class UserInvitationService
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException('Nieprawidłowy adres e-mail.');
         }
-        if ($displayName === '') {
-            throw new \InvalidArgumentException('Podaj imię i nazwisko.');
+        if (mb_strlen($email) > 190) {
+            throw new \InvalidArgumentException('Adres e-mail jest zbyt długi.');
+        }
+        if (mb_strlen($displayName) < 2 || mb_strlen($displayName) > 190) {
+            throw new \InvalidArgumentException('Imię i nazwisko musi mieć od 2 do 190 znaków.');
         }
 
         $allowedRoles = ['employee', 'manager', 'accounting', 'fleet_admin', 'super_admin'];
@@ -61,26 +64,25 @@ final class UserInvitationService
 
     public function accept(string $rawToken, string $password): array
     {
-        if (strlen($password) < 12) {
-            throw new \InvalidArgumentException('Hasło musi mieć minimum 12 znaków.');
+        if (strlen($password) < 12 || strlen($password) > 72) {
+            throw new \InvalidArgumentException('Hasło musi mieć od 12 do 72 znaków.');
         }
 
         $tokenHash = hash('sha256', $rawToken);
-        $stmt = $this->pdo->prepare(
-            'SELECT id, email, display_name, role_code
-             FROM auth_invitations
-             WHERE token_hash = :token_hash AND used_at IS NULL AND expires_at > NOW()
-             LIMIT 1'
-        );
-        $stmt->execute(['token_hash' => $tokenHash]);
-        $invite = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$invite) {
-            throw new \RuntimeException('Zaproszenie jest nieprawidłowe lub wygasło.');
-        }
-
         $this->pdo->beginTransaction();
         try {
+            $stmt = $this->pdo->prepare(
+                'SELECT id, email, display_name, role_code
+                 FROM auth_invitations
+                 WHERE token_hash = :token_hash AND used_at IS NULL AND expires_at > NOW()
+                 LIMIT 1 FOR UPDATE'
+            );
+            $stmt->execute(['token_hash' => $tokenHash]);
+            $invite = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$invite) {
+                throw new \RuntimeException('Zaproszenie jest nieprawidłowe lub wygasło.');
+            }
+
             $userStmt = $this->pdo->prepare(
                 'INSERT INTO auth_users (email, display_name, password_hash, active, password_changed_at)
                  VALUES (:email, :display_name, :password_hash, 1, NOW())'
@@ -101,8 +103,13 @@ final class UserInvitationService
                 'role_code' => $invite['role_code'],
             ]);
 
-            $used = $this->pdo->prepare('UPDATE auth_invitations SET used_at = NOW() WHERE id = :id');
+            $used = $this->pdo->prepare(
+                'UPDATE auth_invitations SET used_at = NOW() WHERE id = :id AND used_at IS NULL'
+            );
             $used->execute(['id' => $invite['id']]);
+            if ($used->rowCount() !== 1) {
+                throw new \RuntimeException('Zaproszenie zostało już wykorzystane.');
+            }
 
             $this->pdo->commit();
 
@@ -113,7 +120,9 @@ final class UserInvitationService
                 'roles' => [(string)$invite['role_code']],
             ];
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
     }

@@ -8,7 +8,7 @@ if (app_mode() !== 'production') {
 }
 
 $userId = require_production_user();
-$userName = (string)($_SESSION['user_name'] ?? 'Użytkownik');
+$userName = (string)($_SESSION['display_name'] ?? 'Użytkownik');
 $roles = $_SESSION['roles'] ?? [];
 $csrf = (string)($_SESSION['csrf_token'] ?? '');
 ?>

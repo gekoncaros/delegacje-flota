@@ -16,8 +16,10 @@
    - `APP_URL=https://delegacje.callit.pl`
    - dane bazy `DB_*`
    - `SESSION_SECURE=true`
+   - `SESSION_IDLE_TIMEOUT=3600` (domyślnie godzina bezczynności)
+   - `SESSION_ABSOLUTE_TIMEOUT=43200` (domyślnie 12 godzin)
 3. Utwórz pustą bazę danych i użytkownika DB z minimalnymi wymaganymi uprawnieniami do tej bazy.
-4. Wykonaj migracje SQL kolejno `001`–`007` po wcześniejszym backupie.
+4. Wykonaj migracje SQL kolejno `001`–`009` po wcześniejszym backupie.
 5. Uruchom `php scripts/preflight.php`.
 6. Utwórz pierwszego Super Admina:
    `php scripts/create-super-admin.php admin@firma.pl "Imię Nazwisko"`
@@ -33,11 +35,17 @@
 - `.env` nigdy nie trafia do Git
 - HTTPS działa bez ostrzeżeń
 - ciasteczko sesyjne ma Secure + HttpOnly + SameSite=Lax
+- wygasanie sesji po bezczynności i maksymalny czas sesji są skonfigurowane
 - migracje 005–007 wykonane
+- migracja 008 wykonana (rezerwacje i lifecycle usterek)
+- migracja 009 wykonana (koszty i autoryzowane załączniki)
+- preflight potwierdza HTTPS, bezpieczne cookie, połączenie oraz komplet wymaganych tabel
 - Super Admin loguje się
 - utworzone role i przełożeni
 - test: pracownik tworzy delegację → przełożony akceptuje → pracownik start/koniec → księgowość widzi zakończoną delegację
 - katalog uploadów nie pozwala wykonywać skryptów
+- katalog `storage/expenses` jest zapisywalny przez PHP i znajduje się poza document rootem `public/`
+- dokument kosztu da się pobrać wyłącznie po zalogowaniu przez adres `/api/expenses/attachment.php`
 - backup bazy działa
 
 ## Ważne
